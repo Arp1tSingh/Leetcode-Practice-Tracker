@@ -40,7 +40,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <header className="sticky top-0 z-50 w-full glass border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <header className="sticky top-0 z-50 w-full glass border-b border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto max-w-5xl h-16 px-4 flex items-center justify-between">
               <div className="flex items-center gap-8">
                 <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
@@ -66,10 +66,10 @@ export default async function RootLayout({
                       <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                       <span className="text-secondary-foreground font-bold">{session.user.name}</span>
                     </div>
-                    <a href="/api/auth/signout" className="text-muted-foreground hover:text-foreground transition-colors">Sign out</a>
+                    <a href="/signout" className="text-muted-foreground hover:text-foreground transition-colors">Sign out</a>
                   </>
                 ) : (
-                  <a href="/api/auth/signin" className="px-4 py-2 rounded-full bg-primary text-primary-foreground font-medium text-sm transition-colors hover:bg-primary/90">
+                  <a href="/login" className="px-4 py-2 rounded-full bg-primary text-primary-foreground font-medium text-sm transition-colors hover:bg-primary/90">
                     Sign in
                   </a>
                 )}

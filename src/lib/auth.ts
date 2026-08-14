@@ -11,6 +11,7 @@ export const authOptions: NextAuthOptions = {
         username: { label: 'Username', type: 'text', placeholder: 'Enter any username' },
         password: { label: 'Password', type: 'password' },
         email: { label: 'Recovery Email (Optional)', type: 'email', placeholder: 'Optional, for password recovery' },
+        action: { label: 'Action', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
@@ -19,7 +20,12 @@ export const authOptions: NextAuthOptions = {
           where: { username: credentials.username },
         });
 
-        if (!user) {
+        const isSignup = credentials.action === 'signup';
+
+        if (isSignup) {
+          if (user) {
+            throw new Error('Username is already taken');
+          }
           const hashedPassword = await bcrypt.hash(credentials.password, 10);
           user = await prisma.user.create({
             data: {
@@ -30,14 +36,23 @@ export const authOptions: NextAuthOptions = {
             },
           });
         } else {
-          const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-          if (!isPasswordValid) return null;
+          // Login flow
+          if (!user) {
+            throw new Error('User not found');
+          }
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password!);
+          if (!isPasswordValid) {
+            throw new Error('Incorrect password');
+          }
         }
 
         return { id: user.id, name: user.name, username: user.username };
       },
     }),
   ],
+  pages: {
+    signIn: '/login',
+  },
   session: {
     strategy: 'jwt',
   },

@@ -10,6 +10,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         username: { label: 'Username', type: 'text', placeholder: 'Enter any username' },
         password: { label: 'Password', type: 'password' },
+        email: { label: 'Recovery Email (Optional)', type: 'email', placeholder: 'Optional, for password recovery' },
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
@@ -24,6 +25,7 @@ export const authOptions: NextAuthOptions = {
             data: {
               username: credentials.username,
               name: credentials.username,
+              email: credentials.email || null,
               password: hashedPassword,
             },
           });

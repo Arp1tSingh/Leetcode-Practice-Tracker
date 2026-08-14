@@ -8,22 +8,22 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'text', placeholder: 'user@example.com' },
+        username: { label: 'Username', type: 'text', placeholder: 'Enter any username' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.username || !credentials?.password) return null;
 
         let user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { username: credentials.username },
         });
 
         if (!user) {
           const hashedPassword = await bcrypt.hash(credentials.password, 10);
           user = await prisma.user.create({
             data: {
-              email: credentials.email,
-              name: credentials.email.split('@')[0],
+              username: credentials.username,
+              name: credentials.username,
               password: hashedPassword,
             },
           });
@@ -32,7 +32,7 @@ export const authOptions: NextAuthOptions = {
           if (!isPasswordValid) return null;
         }
 
-        return { id: user.id, email: user.email, name: user.name };
+        return { id: user.id, name: user.name, username: user.username };
       },
     }),
   ],

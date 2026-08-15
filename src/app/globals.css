@@ -109,8 +109,14 @@
   .glass {
     @apply bg-background/70 backdrop-blur-md border border-border/50;
   }
+  .virtual-row {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 60px;
+    contain: paint;
+  }
   .card-hover {
     @apply transition-transform duration-300 hover:-translate-y-1 relative;
+    contain: paint;
   }
   .card-hover::after {
     content: '';

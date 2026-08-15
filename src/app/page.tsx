@@ -36,10 +36,10 @@ export default async function Dashboard() {
 
       <SyncLeetcodeSection userId={userId} initialUsername={user?.leetcodeUsername || null} />
 
-      <div className="glass p-6 rounded-2xl overflow-hidden">
-        <div className="flex justify-between items-center mb-6">
+      <div className="glass p-4 sm:p-6 rounded-2xl overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <h2 className="text-xl font-bold tracking-tight">Today's Recommended Queue</h2>
-          <Link href="/problems" className="text-sm font-medium text-primary hover:underline underline-offset-4">
+          <Link href="/problems" className="text-sm font-medium text-primary hover:underline underline-offset-4 self-start sm:self-auto">
             Manage Problems &rarr;
           </Link>
         </div>

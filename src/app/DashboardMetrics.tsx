@@ -39,7 +39,7 @@ export async function DashboardMetrics({ userId }: { userId: string }) {
   });
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
       <div className="p-5 rounded-2xl glass card-hover flex flex-col justify-between">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-medium text-muted-foreground">Total Problems</h2>

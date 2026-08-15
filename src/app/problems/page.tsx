@@ -23,8 +23,8 @@ export default async function ProblemsPage() {
         <p className="text-muted-foreground">Manage and track your LeetCode problems.</p>
       </div>
       
-      <div className="glass p-6 rounded-2xl">
-        <div className="flex items-center gap-2 mb-6">
+      <div className="glass p-4 sm:p-6 rounded-2xl">
+        <div className="flex items-center gap-2 mb-4 sm:mb-6">
           <ListPlus className="w-5 h-5 text-muted-foreground" />
           <h2 className="text-xl font-bold tracking-tight">Add a new Problem</h2>
         </div>

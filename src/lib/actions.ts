@@ -140,37 +140,25 @@ export async function submitReviewAction(
   }
 }
 
-export async function importCsvData(userId: string, csvContent: string) {
+export async function importCsvBatchAction(userId: string, problemIds: number[]) {
   try {
-    const lines = csvContent.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length < 2) throw new Error("CSV is empty or missing headers");
-    
-    // Support common header names for LeetCode IDs
-    const headers = lines[0].toLowerCase().split(',').map(h => h.replace(/["']/g, '').trim());
-    const idIndex = headers.findIndex(h => h === 'id' || h === 'questionid' || h === 'frontend_question_id' || h === 'question id');
-    
-    if (idIndex === -1) throw new Error("CSV must contain an 'id' or 'questionId' column");
-    
+    if (!problemIds || problemIds.length === 0) {
+      return { success: true, added: 0 };
+    }
+
     let addedCount = 0;
-    for (let i = 1; i < lines.length; i++) {
-      // Naive CSV split that handles basic commas (will break on commas inside quotes, but fine for simple IDs)
-      const cols = lines[i].split(',');
-      const idStr = cols[idIndex]?.replace(/["']/g, '').trim();
-      if (!idStr) continue;
+    for (const frontendId of problemIds) {
+      if (isNaN(frontendId) || frontendId <= 0) continue;
       
-      const frontendId = parseInt(idStr, 10);
-      if (!isNaN(frontendId)) {
-        // Use our existing addProblemAction logic
-        const res = await addProblemAction(userId, frontendId);
-        if (res.success) addedCount++;
-      }
+      const res = await addProblemAction(userId, frontendId);
+      if (res.success) addedCount++;
     }
     
     revalidatePath('/');
     revalidatePath('/problems');
-    return { success: true, added: addedCount, message: `Successfully imported ${addedCount} problems from CSV.` };
+    return { success: true, added: addedCount, message: `Successfully imported ${addedCount} problems.` };
   } catch (error: any) {
-    return { error: error.message || 'Failed to parse CSV.' };
+    return { error: error.message || 'Failed to process CSV batch.' };
   }
 }
 

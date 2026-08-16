@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { setLeetcodeUsername, syncLeetcodeProfile, importCsvData } from '@/lib/actions';
+import { setLeetcodeUsername, syncLeetcodeProfile, importCsvBatchAction } from '@/lib/actions';
 import { RefreshCw, Upload, Save, UserCircle } from 'lucide-react';
 
 export default function SyncLeetcodeSection({ userId, initialUsername }: { userId: string, initialUsername: string | null }) {
@@ -45,28 +45,76 @@ export default function SyncLeetcodeSection({ userId, initialUsername }: { userI
     if (!file) return;
 
     setIsImporting(true);
-    setMessage('Reading CSV...');
+    setMessage('Parsing CSV...');
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const text = event.target?.result as string;
-      setMessage('Importing problems... (this may take a minute)');
-      const res = await importCsvData(userId, text);
-      if (res.error) {
-        setMessage(`Import error: ${res.error}`);
-      } else {
-        setMessage(res.message || 'Import complete.');
-      }
+    import('papaparse').then((Papa) => {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+          try {
+            const data = results.data as Record<string, string>[];
+            if (!data.length) {
+              throw new Error("CSV is empty or missing headers");
+            }
+            
+            // Find the ID column
+            const headers = Object.keys(data[0]);
+            const idCol = headers.find(h => {
+              const lower = h.toLowerCase().replace(/["']/g, '').trim();
+              return lower === 'id' || lower === 'questionid' || lower === 'frontend_question_id' || lower === 'question id';
+            });
+
+            if (!idCol) {
+              throw new Error("CSV must contain an 'id' or 'questionId' column");
+            }
+
+            const ids = data
+              .map(row => parseInt(row[idCol]?.replace(/["']/g, '').trim() || '', 10))
+              .filter(id => !isNaN(id) && id > 0);
+
+            if (ids.length === 0) {
+              throw new Error("No valid IDs found in the CSV");
+            }
+
+            setMessage(`Importing ${ids.length} problems in batches...`);
+            
+            // Process in chunks of 50
+            const chunkSize = 50;
+            let totalAdded = 0;
+            
+            for (let i = 0; i < ids.length; i += chunkSize) {
+              const chunk = ids.slice(i, i + chunkSize);
+              setMessage(`Importing batch ${Math.floor(i/chunkSize) + 1} of ${Math.ceil(ids.length/chunkSize)}...`);
+              
+              const res = await importCsvBatchAction(userId, chunk);
+              if (res.error) {
+                console.error("Batch error:", res.error);
+                // Continue with other batches, but log the error
+              } else if (res.added) {
+                totalAdded += res.added;
+              }
+            }
+
+            setMessage(`Import complete. Successfully added ${totalAdded} problems.`);
+          } catch (err: any) {
+            setMessage(`Import error: ${err.message}`);
+          } finally {
+            setIsImporting(false);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = ''; // Reset input
+            }
+          }
+        },
+        error: (error) => {
+          setMessage(`Parse error: ${error.message}`);
+          setIsImporting(false);
+        }
+      });
+    }).catch(err => {
+      setMessage('Failed to load CSV parser.');
       setIsImporting(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''; // Reset input
-      }
-    };
-    reader.onerror = () => {
-      setMessage('Failed to read file.');
-      setIsImporting(false);
-    };
-    reader.readAsText(file);
+    });
   };
 
   return (

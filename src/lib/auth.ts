@@ -69,20 +69,29 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        const stayLoggedIn = (user as any).stayLoggedIn !== false;
-        token.stayLoggedIn = stayLoggedIn;
-        if (stayLoggedIn) {
-          token.exp = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 days
-        } else {
-          token.exp = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 1 day
+        token.stayLoggedIn = (user as any).stayLoggedIn !== false;
+        token.loginAt = Date.now();
+      }
+
+      // For non-persistent sessions, invalidate after 24 hours
+      if (token.stayLoggedIn === false && token.loginAt) {
+        const elapsed = Date.now() - (token.loginAt as number);
+        if (elapsed > 24 * 60 * 60 * 1000) {
+          // Wipe identity so session callback returns no user
+          token.id = undefined;
+          token.expired = true;
         }
       }
+
       return token;
     },
     async session({ session, token }) {
+      if (token.expired || !token.id) {
+        // Return a session with no user data — pages will redirect to login
+        return { ...session, user: undefined as any, expires: new Date(0).toISOString() };
+      }
       if (session.user) {
         (session.user as any).id = token.id;
-        (session.user as any).stayLoggedIn = token.stayLoggedIn;
       }
       return session;
     },

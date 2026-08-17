@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { LogIn, UserPlus, ArrowRight, BookOpen } from 'lucide-react';
+import { LogIn, UserPlus, ArrowRight, BookOpen, Check } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
+  const [stayLoggedIn, setStayLoggedIn] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +29,7 @@ export default function LoginPage() {
         password,
         email: activeTab === 'signup' ? email : undefined,
         action: activeTab, // Let backend know if it's login or signup
+        stayLoggedIn: stayLoggedIn ? 'true' : 'false',
       });
 
       if (result?.error) {
@@ -81,7 +83,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="p-8">
+          <div className="p-6 sm:p-8">
             <form onSubmit={handleSubmit} className="space-y-5">
               
               <div className="space-y-2">
@@ -120,6 +122,37 @@ export default function LoginPage() {
                   className="w-full px-4 py-3 rounded-xl bg-background border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-sm"
                 />
               </div>
+
+              {/* Stay Logged In Checkbox - Mobile & Desktop Touch-Friendly */}
+              <label 
+                htmlFor="stayLoggedIn"
+                className="flex items-start sm:items-center gap-3 p-2 -mx-2 rounded-xl hover:bg-secondary/30 active:bg-secondary/50 cursor-pointer select-none transition-colors touch-manipulation group"
+              >
+                <div className="relative flex items-center justify-center mt-0.5 sm:mt-0 flex-shrink-0">
+                  <input
+                    id="stayLoggedIn"
+                    type="checkbox"
+                    checked={stayLoggedIn}
+                    onChange={(e) => setStayLoggedIn(e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all duration-200 ${
+                    stayLoggedIn 
+                      ? 'bg-primary border-primary text-primary-foreground shadow-sm shadow-primary/30' 
+                      : 'bg-background border-input hover:border-primary/50 group-hover:border-primary/50'
+                  }`}>
+                    {stayLoggedIn && <Check className="w-3.5 h-3.5 stroke-[3] animate-in zoom-in-50 duration-150" />}
+                  </div>
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-medium text-foreground leading-snug group-hover:text-primary transition-colors">
+                    Stay logged in
+                  </span>
+                  <span className="text-xs text-muted-foreground leading-tight">
+                    Keep your session active on this device
+                  </span>
+                </div>
+              </label>
 
               {error && (
                 <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium animate-in fade-in">

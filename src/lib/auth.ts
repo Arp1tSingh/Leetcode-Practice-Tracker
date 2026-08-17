@@ -12,6 +12,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
         email: { label: 'Recovery Email (Optional)', type: 'email', placeholder: 'Optional, for password recovery' },
         action: { label: 'Action', type: 'text' },
+        stayLoggedIn: { label: 'Stay Logged In', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
@@ -46,7 +47,14 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
-        return { id: user.id, name: user.name, username: user.username };
+        const stayLoggedIn = credentials.stayLoggedIn !== 'false';
+
+        return { 
+          id: user.id, 
+          name: user.name, 
+          username: user.username,
+          stayLoggedIn,
+        };
       },
     }),
   ],
@@ -55,17 +63,26 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        const stayLoggedIn = (user as any).stayLoggedIn !== false;
+        token.stayLoggedIn = stayLoggedIn;
+        if (stayLoggedIn) {
+          token.exp = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // 30 days
+        } else {
+          token.exp = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 1 day
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id;
+        (session.user as any).stayLoggedIn = token.stayLoggedIn;
       }
       return session;
     },

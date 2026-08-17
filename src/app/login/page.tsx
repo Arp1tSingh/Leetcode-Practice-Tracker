@@ -35,7 +35,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError(result.error);
       } else {
-        router.push('/');
+        router.replace('/');
         router.refresh();
       }
     } catch (err) {

@@ -35,7 +35,7 @@ export default async function AuthHeader() {
                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                 <span className="text-secondary-foreground font-bold truncate max-w-[120px]">{session.user.name}</span>
               </div>
-              <a href="/api/auth/signout" className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">Sign out</a>
+              <Link href="/signout" className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">Sign out</Link>
             </>
           ) : (
             <a href="/api/auth/signin" className="px-4 py-2 rounded-full bg-primary text-primary-foreground font-medium text-sm transition-colors hover:bg-primary/90 whitespace-nowrap">

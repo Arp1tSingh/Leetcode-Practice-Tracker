@@ -107,9 +107,8 @@ export function LandingPage() {
     <div className="landing-scope">
       <main ref={pageRef} className="site-shell">
         <header className="site-header">
-          <a className="brand" href="#top" aria-label="Loopframe home">
-            <img src="/manus-storage/loopframe-logo_605a2f6a.png" alt="" />
-            <span>LOOPFRAME</span>
+          <a className="brand" href="#top" aria-label="Leetcode FSRS home">
+            <span>LEETCODE FSRS</span>
           </a>
           <nav className="nav-links" aria-label="Primary navigation">
             <a href="#the-loop">The loop</a>
@@ -134,7 +133,7 @@ export function LandingPage() {
               Make every solved problem <span>easier to retrieve.</span>
             </h1>
             <p className="hero-description reveal" style={{ "--delay": "160ms" } as React.CSSProperties}>
-              Loopframe turns one-off problem solving into a deliberate review system—so patterns stay present when the next hard problem arrives.
+              Leetcode FSRS turns one-off problem solving into a deliberate review system—so patterns stay present when the next hard problem arrives.
             </p>
             <div className="hero-actions reveal" style={{ "--delay": "220ms" } as React.CSSProperties}>
               <Link href="/login" className="button button-primary">Build your review loop <ArrowDownRight size={18} /></Link>
@@ -160,7 +159,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="signal-band" aria-label="Loopframe benefit statement">
+        <section className="signal-band" aria-label="Leetcode FSRS benefit statement">
           <p className="reveal">Study fewer things. <span>Remember the right ones.</span></p>
           <ArrowUpRight className="reveal" size={31} />
         </section>
@@ -218,7 +217,7 @@ export function LandingPage() {
         </section>
 
         <footer className="site-footer">
-          <a className="brand" href="#top"><img src="/manus-storage/loopframe-logo_605a2f6a.png" alt="" /><span>LOOPFRAME</span></a>
+          <a className="brand" href="#top"><span>LEETCODE FSRS</span></a>
           <p>Built for durable technical recall.</p>
           <span>© 2026</span>
         </footer>

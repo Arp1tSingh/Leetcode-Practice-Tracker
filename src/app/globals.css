@@ -107,7 +107,7 @@
 /* Custom Utilities for Modern Dashboard */
 @layer utilities {
   .glass {
-    @apply bg-background/70 backdrop-blur-md border border-border/50;
+    @apply bg-background/95 border border-border/50 shadow-sm;
   }
   .virtual-row {
     content-visibility: auto;

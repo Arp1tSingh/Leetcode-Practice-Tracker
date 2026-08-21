@@ -40,7 +40,7 @@ export default function ReviewsTableClient({ reviews }: { reviews: ReviewProp[] 
   return (
     <div className="overflow-x-auto w-full">
       <table ref={tableRef} className="w-full text-sm text-left whitespace-nowrap">
-        <thead className="bg-secondary/30 text-muted-foreground font-medium border-b border-border/50 sticky top-16 z-40 shadow-sm backdrop-blur-md">
+        <thead className="bg-secondary/30 text-muted-foreground font-medium border-b border-border/50 sticky top-16 z-40 shadow-sm">
           <tr>
             <th className="px-6 py-4">Date</th>
             <th className="px-6 py-4">Problem</th>

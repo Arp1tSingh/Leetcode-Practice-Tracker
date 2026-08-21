@@ -10,6 +10,8 @@ import { DashboardQueue } from "./DashboardQueue";
 import { LandingPage } from "@/components/landing/LandingPage";
 import AppLayout from "@/components/AppLayout";
 
+export const instant = false;
+
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
 

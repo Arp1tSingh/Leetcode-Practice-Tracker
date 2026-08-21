@@ -7,6 +7,8 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import PatternsTableFetcher from "./PatternsTableFetcher";
 
+export const instant = false;
+
 export default async function PatternsPage() {
   const session = await getServerSession(authOptions);
 

@@ -6,6 +6,8 @@ import ReviewForm from "./ReviewForm";
 import Link from "next/link";
 import { ExternalLink, X, BrainCircuit } from "lucide-react";
 
+export const instant = false;
+
 export default async function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
 

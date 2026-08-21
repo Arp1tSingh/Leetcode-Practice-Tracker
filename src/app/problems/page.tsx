@@ -7,6 +7,8 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ProblemsTableFetcher from "./ProblemsTableFetcher";
 
+export const instant = false;
+
 export default async function ProblemsPage() {
   const session = await getServerSession(authOptions);
 

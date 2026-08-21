@@ -7,6 +7,8 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReviewsTableFetcher from "./ReviewsTableFetcher";
 
+export const instant = false;
+
 export default async function ReviewsPage() {
   const session = await getServerSession(authOptions);
 

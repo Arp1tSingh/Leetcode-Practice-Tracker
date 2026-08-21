@@ -8,7 +8,7 @@ export default async function AuthHeader() {
   const session = await getServerSession(authOptions);
   
   return (
-    <header className="sticky top-0 z-50 w-full glass border-b border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 will-change-transform transform-gpu">
+    <header className="sticky top-0 z-50 w-full glass border-b border-border/40 bg-background/95 will-change-transform transform-gpu">
       <div className="container mx-auto max-w-5xl h-16 px-4 flex items-center justify-between">
         <div className="flex items-center gap-4 md:gap-8">
           <MobileMenu isLoggedIn={!!session?.user} />

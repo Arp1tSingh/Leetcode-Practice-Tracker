@@ -111,3 +111,36 @@ export async function getProblemByTitleSlug(titleSlug: string) {
     throw error;
   }
 }
+
+export async function getRecentSubmissions(username: string, limit: number = 20) {
+  const query = `
+    query recentAcSubmissions($username: String!, $limit: Int!) {
+      recentAcSubmissionList(username: $username, limit: $limit) {
+        id
+        title
+        titleSlug
+        timestamp
+        statusDisplay
+      }
+    }
+  `;
+  
+  const res = await fetch('https://leetcode.com/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query,
+      variables: { username, limit },
+    }),
+    cache: 'no-store'
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch recent submissions');
+  }
+
+  const data = await res.json();
+  return data?.data?.recentAcSubmissionList || [];
+}

@@ -2,7 +2,7 @@
 
 import { prisma } from './prisma';
 import { scheduler } from './fsrs';
-import { getProblemByFrontendId, getProblemByTitleSlug } from './leetcode';
+import { getProblemByFrontendId, getProblemByTitleSlug, getRecentSubmissions } from './leetcode';
 import { revalidatePath } from 'next/cache';
 import { Card, Rating, Grade } from 'ts-fsrs';
 import { LeetCode } from 'leetcode-query';
@@ -164,10 +164,11 @@ export async function importCsvBatchAction(userId: string, problemIds: number[])
 
 export async function setLeetcodeUsername(userId: string, username: string) {
   try {
-    if (!username) throw new Error("Username cannot be empty");
+    const trimmedUsername = username?.trim();
+    if (!trimmedUsername) throw new Error("Username cannot be empty");
     await prisma.user.update({
       where: { id: userId },
-      data: { leetcodeUsername: username }
+      data: { leetcodeUsername: trimmedUsername }
     });
     revalidatePath('/');
     return { success: true };
@@ -181,15 +182,15 @@ export async function syncLeetcodeProfile(userId: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.leetcodeUsername) throw new Error("No LeetCode username set");
 
-    const lc = new LeetCode();
-    const submissions = await lc.recent_submissions(user.leetcodeUsername, 20);
+    const username = user.leetcodeUsername.trim();
+    const submissions = await getRecentSubmissions(username, 20);
     
     // API limitation: limits to 20 or might fail if profile is private
     if (!submissions || submissions.length === 0) {
       return { success: true, added: 0, message: "No recent submissions found or profile is private." };
     }
 
-    const accepted = submissions.filter(s => s.statusDisplay === 'Accepted');
+    const accepted = submissions.filter((s: any) => s.statusDisplay === 'Accepted');
     let addedCount = 0;
 
     for (const sub of accepted) {

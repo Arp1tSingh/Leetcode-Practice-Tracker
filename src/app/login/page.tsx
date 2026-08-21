@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { LogIn, UserPlus, ArrowRight, BookOpen, Check } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +17,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [stayLoggedIn, setStayLoggedIn] = useState(true);
+
+  const { status } = useSession();
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/');
+    }
+  }, [status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

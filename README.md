@@ -11,7 +11,9 @@ A powerful web application designed to supercharge your technical interview prep
 ## 🧠 How it Works
 
 1. **Intelligent Scheduling:** We utilize the Free Spaced Repetition Scheduler (FSRS) algorithm. When you review a problem and grade your performance (e.g., Easy, Medium, Hard, Again), the engine calculates your memory retention and schedules the next review day to optimize mastery.
-2. **Seamless LeetCode Sync:** Connect your public LeetCode username. The app automatically fetches your most recent accepted submissions via the LeetCode GraphQL API and adds them to your tracker. No manual data entry required!
+2. **Seamless LeetCode Sync:** 
+   - *Public Profile Sync:* Connect your public LeetCode username to automatically fetch your most recent accepted submissions.
+   - *Bookmarklet Bulk Sync:* Drag the provided bookmarklet to your browser, click it while logged into LeetCode, and instantly import your *entire* solved history into the app using a secure, stateless JWT token.
 3. **Pattern Mastery:** Group and track your proficiency across fundamental algorithm patterns (Sliding Window, Two Pointers, DP, etc.).
 4. **Daily Queue:** Your dashboard provides a tailored "Today's Recommended Queue" so you always know exactly which problems need your attention on any given day.
 

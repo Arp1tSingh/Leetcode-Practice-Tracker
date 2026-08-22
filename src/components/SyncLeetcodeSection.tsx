@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { setLeetcodeUsername, syncLeetcodeProfile, importCsvBatchAction } from '@/lib/actions';
 import { RefreshCw, Upload, Save, UserCircle } from 'lucide-react';
+import BookmarkletCard from '@/components/BookmarkletCard';
 
 export default function SyncLeetcodeSection({ userId, initialUsername }: { userId: string, initialUsername: string | null }) {
   const [username, setUsername] = useState(initialUsername || '');
@@ -121,7 +122,7 @@ export default function SyncLeetcodeSection({ userId, initialUsername }: { userI
     <div className="glass p-4 sm:p-6 rounded-2xl">
       <h2 className="text-xl font-bold tracking-tight mb-6">Integrations</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Username Sync */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-2">
@@ -193,6 +194,11 @@ export default function SyncLeetcodeSection({ userId, initialUsername }: { userI
               Upload a CSV containing an <code>id</code> or <code>questionId</code> column to bulk import problems.
             </p>
           </div>
+        </div>
+
+        {/* Bookmarklet Sync */}
+        <div className="h-full">
+          <BookmarkletCard />
         </div>
       </div>
       

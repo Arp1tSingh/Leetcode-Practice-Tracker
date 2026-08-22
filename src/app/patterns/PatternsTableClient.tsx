@@ -43,7 +43,9 @@ export default function PatternsTableClient({ patterns }: { patterns: PatternPro
           </div>
           <p className="text-sm font-medium text-muted-foreground">Highest Mastery</p>
           <p className="text-xl font-bold mt-1 text-foreground">
-            {patterns.length > 0 ? [...patterns].sort((a,b) => b.masteryScore - a.masteryScore)[0].name : 'N/A'}
+            {patterns.length > 0 && Math.max(...patterns.map(p => p.masteryScore)) > 0 
+              ? [...patterns].sort((a,b) => b.masteryScore - a.masteryScore)[0].name 
+              : 'None Yet'}
           </p>
         </div>
 

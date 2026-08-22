@@ -84,7 +84,12 @@ export default async function PatternsTableFetcher({ userId }: { userId: string 
     };
   });
 
-  patternData.sort((a, b) => b.weaknessLevel - a.weaknessLevel);
+  patternData.sort((a, b) => {
+    if (b.weaknessLevel !== a.weaknessLevel) {
+      return b.weaknessLevel - a.weaknessLevel;
+    }
+    return b.totalProblems - a.totalProblems;
+  });
 
   return <PatternsTableClient patterns={patternData} />;
 }

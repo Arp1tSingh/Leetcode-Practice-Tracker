@@ -1,6 +1,6 @@
 # LeetCode Spaced Repetition (FSRS) Tracker
 
-![Dashboard Snapshot](public/favicon.ico) <!-- Placeholder for actual screenshot -->
+![Dashboard Snapshot](public/dashboard-snapshot.png)
 
 A powerful web application designed to supercharge your technical interview prep. This app brings the science of **Spaced Repetition (FSRS)** to your LeetCode grind, ensuring that you review problems exactly when you're about to forget them. 
 

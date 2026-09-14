@@ -21,9 +21,19 @@ export default function Error({
         <AlertCircle className="w-8 h-8 text-destructive" />
       </div>
       <h2 className="text-2xl font-bold tracking-tight mb-2">Something went wrong!</h2>
-      <p className="text-muted-foreground mb-8 max-w-md">
+      <p className="text-muted-foreground mb-4 max-w-md">
         An unexpected error occurred while loading this page. Our servers might be experiencing a hiccup.
       </p>
+
+      {/* Debug details to pinpoint errors in production */}
+      <div className="mb-6 max-w-lg w-full bg-destructive/5 border border-destructive/20 rounded-xl p-4 text-left font-mono text-xs text-destructive overflow-auto max-h-48">
+        <p className="font-semibold mb-1">Error Details:</p>
+        <p className="break-all">{error.message || 'No error message available'}</p>
+        {error.digest && (
+          <p className="mt-2 text-muted-foreground">Digest: <span className="text-foreground">{error.digest}</span></p>
+        )}
+      </div>
+
       <button
         onClick={() => reset()}
         className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm active:scale-95"

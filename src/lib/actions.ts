@@ -177,7 +177,31 @@ export async function setLeetcodeUsername(userId: string, username: string) {
   }
 }
 
-export async function syncLeetcodeProfile(userId: string) {
+// Server-side safeguards: In-memory rate limiting and concurrency locking per user
+const syncCooldownMap = new Map<string, number>();
+const syncLockSet = new Set<string>();
+
+export async function syncLeetcodeProfile(userId: string, isManual: boolean = false) {
+  // Safeguard 1: Prevent concurrent syncs for the same user
+  if (syncLockSet.has(userId)) {
+    return { success: true, message: 'Sync already in progress...' };
+  }
+
+  // Safeguard 2: Server-side cooldown (15 minutes for auto-sync, 30 seconds for manual clicks)
+  const lastSyncTime = syncCooldownMap.get(userId) || 0;
+  const cooldownPeriod = isManual ? 30 * 1000 : 15 * 60 * 1000;
+  
+  if (Date.now() - lastSyncTime < cooldownPeriod) {
+    const waitMins = Math.ceil((cooldownPeriod - (Date.now() - lastSyncTime)) / 60000);
+    return { 
+      success: true, 
+      rateLimited: true, 
+      message: `Sync is on cooldown. Please wait ${waitMins}m.` 
+    };
+  }
+
+  syncLockSet.add(userId);
+
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.leetcodeUsername) throw new Error("No LeetCode username set");
@@ -187,66 +211,79 @@ export async function syncLeetcodeProfile(userId: string) {
     
     // API limitation: limits to 20 or might fail if profile is private
     if (!submissions || submissions.length === 0) {
+      syncCooldownMap.set(userId, Date.now());
       return { success: true, added: 0, message: "No recent submissions found or profile is private." };
     }
 
     const accepted = submissions.filter((s: any) => s.statusDisplay === 'Accepted');
+    if (accepted.length === 0) {
+      syncCooldownMap.set(userId, Date.now());
+      return { success: true, added: 0, message: "No accepted submissions found." };
+    }
+
+    // Safeguard 3: Pre-filter existing problems in 1 database query
+    // instead of querying LeetCode GraphQL 20 times for already tracked problems!
+    const existingProblems = await prisma.problem.findMany({
+      where: {
+        userId,
+        titleSlug: { in: accepted.map((s: any) => s.titleSlug) }
+      },
+      select: { titleSlug: true }
+    });
+    const existingSlugs = new Set(existingProblems.map(p => p.titleSlug));
+    const newSubs = accepted.filter((s: any) => !existingSlugs.has(s.titleSlug));
+
     let addedCount = 0;
 
-    for (const sub of accepted) {
-      // 1. Fetch details to get frontend ID and tags
+    for (const sub of newSubs) {
+      // Fetch details only for genuinely new problems
       const leetcodeData = await getProblemByTitleSlug(sub.titleSlug);
       const frontendId = parseInt(leetcodeData.questionFrontendId, 10);
       
-      // 2. Check if it already exists
-      const existing = await prisma.problem.findUnique({
-        where: {
-          userId_leetcodeId: {
-            userId,
-            leetcodeId: frontendId,
-          }
+      const patterns = leetcodeData.topicTags?.map((tag: any) => tag.name).join(', ') || 'Unknown';
+      const submissionDate = new Date(parseInt(sub.timestamp, 10) * 1000);
+      const nextReview = new Date(submissionDate.getTime() + 24 * 60 * 60 * 1000);
+      
+      await prisma.problem.create({
+        data: {
+          userId,
+          leetcodeId: frontendId,
+          title: leetcodeData.title,
+          titleSlug: leetcodeData.titleSlug,
+          difficulty: leetcodeData.difficulty || 'Medium',
+          pattern: patterns,
+          state: 0,
+          stability: 0,
+          difficultyWeight: 0,
+          elapsedDays: 0,
+          scheduledDays: 0,
+          reps: 0,
+          lapses: 0,
+          learningSteps: 0,
+          lastReview: submissionDate,
+          nextReview: nextReview,
         }
       });
       
-      if (!existing) {
-        const patterns = leetcodeData.topicTags.map((tag: any) => tag.name).join(', ');
-        
-        // Use submission time as last review
-        const submissionDate = new Date(parseInt(sub.timestamp, 10) * 1000);
-        // We'll set due for 1 day later
-        const nextReview = new Date(submissionDate.getTime() + 24 * 60 * 60 * 1000);
-        
-        await prisma.problem.create({
-          data: {
-            userId,
-            leetcodeId: frontendId,
-            title: leetcodeData.title,
-            titleSlug: leetcodeData.titleSlug,
-            difficulty: leetcodeData.difficulty,
-            pattern: patterns,
-            // Assume state as learning (0) or review (2). Let's set as new/learning.
-            state: 0,
-            stability: 0,
-            difficultyWeight: 0,
-            elapsedDays: 0,
-            scheduledDays: 0,
-            reps: 0,
-            lapses: 0,
-            learningSteps: 0,
-            lastReview: submissionDate,
-            nextReview: nextReview,
-          }
-        });
-        
-        addedCount++;
-      }
+      addedCount++;
     }
 
-    revalidatePath('/');
-    revalidatePath('/problems');
-    return { success: true, added: addedCount, message: `Successfully synced ${addedCount} new problems.` };
+    syncCooldownMap.set(userId, Date.now());
+
+    if (addedCount > 0) {
+      revalidatePath('/');
+      revalidatePath('/problems');
+    }
+
+    return { 
+      success: true, 
+      added: addedCount, 
+      message: addedCount > 0 ? `Successfully synced ${addedCount} new problem${addedCount > 1 ? 's' : ''}.` : 'All recent problems are already tracked.' 
+    };
   } catch (error: any) {
     return { error: error.message || 'Failed to sync LeetCode profile.' };
+  } finally {
+    syncLockSet.delete(userId);
   }
 }
 

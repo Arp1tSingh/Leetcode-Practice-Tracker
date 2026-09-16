@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { setLeetcodeUsername, syncLeetcodeProfile, importCsvBatchAction } from '@/lib/actions';
 import { RefreshCw, Upload, Save, UserCircle } from 'lucide-react';
 import BookmarkletCard from '@/components/BookmarkletCard';
@@ -12,6 +12,27 @@ export default function SyncLeetcodeSection({ userId, initialUsername }: { userI
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Automatic background sync on visit with 15-minute cooldown safeguard
+  useEffect(() => {
+    if (!initialUsername) return;
+
+    const COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes safeguard
+    const storageKey = `lc_last_auto_sync_${userId}`;
+    const lastSync = localStorage.getItem(storageKey);
+
+    if (!lastSync || Date.now() - parseInt(lastSync, 10) > COOLDOWN_MS) {
+      localStorage.setItem(storageKey, Date.now().toString());
+
+      syncLeetcodeProfile(userId, false).then((res) => {
+        if (res.added && res.added > 0) {
+          setMessage(`Auto-synced: Added ${res.added} newly solved problem${res.added > 1 ? 's' : ''} from LeetCode!`);
+        }
+      }).catch((err) => {
+        console.error("Auto-sync background error:", err);
+      });
+    }
+  }, [userId, initialUsername]);
 
   const handleSaveUsername = async () => {
     setIsSaving(true);
@@ -32,7 +53,7 @@ export default function SyncLeetcodeSection({ userId, initialUsername }: { userI
     }
     setIsSyncing(true);
     setMessage('Syncing...');
-    const res = await syncLeetcodeProfile(userId);
+    const res = await syncLeetcodeProfile(userId, true);
     if (res.error) {
       setMessage(`Sync error: ${res.error}`);
     } else {
@@ -160,7 +181,7 @@ export default function SyncLeetcodeSection({ userId, initialUsername }: { userI
               {isSyncing ? 'Syncing...' : 'Sync Recent Submissions'}
             </button>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Syncs your 20 most recent accepted submissions. Make sure your profile is public.
+              Automatically syncs your newest submissions on visit (15m cooldown), or click above to sync immediately.
             </p>
           </div>
         </div>

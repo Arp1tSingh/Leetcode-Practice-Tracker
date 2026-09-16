@@ -33,7 +33,7 @@ export default async function ProblemsPage() {
         <AddProblemForm userId={userId} />
       </div>
 
-      <div className="glass rounded-2xl overflow-hidden border-border/50">
+      <div className="glass rounded-2xl border-border/50">
         <Suspense fallback={<Skeleton className="w-full h-[500px]" />}>
           <ProblemsTableFetcher userId={userId} />
         </Suspense>

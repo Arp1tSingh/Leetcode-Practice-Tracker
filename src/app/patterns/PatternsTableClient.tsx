@@ -1,7 +1,5 @@
 "use client";
 
-import { useWindowVirtualizer } from '@tanstack/react-virtual';
-import { useRef } from 'react';
 import { AlertTriangle, BrainCircuit, Target } from "lucide-react";
 
 type PatternProp = {
@@ -15,15 +13,6 @@ type PatternProp = {
 };
 
 export default function PatternsTableClient({ patterns }: { patterns: PatternProp[] }) {
-  const tableRef = useRef<HTMLTableElement>(null);
-  
-  const virtualizer = useWindowVirtualizer({
-    count: patterns.length,
-    estimateSize: () => 64,
-    overscan: 5,
-    scrollMargin: tableRef.current?.offsetTop ?? 0,
-  });
-
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -60,18 +49,18 @@ export default function PatternsTableClient({ patterns }: { patterns: PatternPro
         </div>
       </div>
 
-      <div className="glass rounded-2xl border border-border/50 overflow-hidden">
-        <div className="overflow-x-auto w-full">
-          <table ref={tableRef} className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-secondary/30 text-muted-foreground font-medium border-b border-border/50 sticky top-16 z-40 shadow-sm">
+      <div className="glass rounded-2xl border border-border/50">
+        <div className="overflow-x-auto w-full rounded-2xl">
+          <table className="w-full text-sm text-left whitespace-nowrap">
+            <thead className="text-muted-foreground font-medium border-b border-border/50">
               <tr>
-                <th className="px-6 py-4">Pattern</th>
-                <th className="px-6 py-4">Total Problems</th>
-                <th className="px-6 py-4">Mastery Score</th>
-                <th className="px-6 py-4">Weakness Level</th>
-                <th className="px-6 py-4">Hint Rate</th>
-                <th className="px-6 py-4">Avg Time</th>
-                <th className="px-6 py-4">Target Time</th>
+                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Pattern</th>
+                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Total Problems</th>
+                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Mastery Score</th>
+                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Weakness Level</th>
+                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Hint Rate</th>
+                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Avg Time</th>
+                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Target Time</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
@@ -83,20 +72,10 @@ export default function PatternsTableClient({ patterns }: { patterns: PatternPro
                 </tr>
               )}
 
-              {virtualizer.getVirtualItems().length > 0 && (
-                <tr style={{ height: `${virtualizer.getVirtualItems()[0]?.start ?? 0}px` }}>
-                  <td colSpan={7} />
-                </tr>
-              )}
-
-              {virtualizer.getVirtualItems().map((virtualRow) => {
-                const p = patterns[virtualRow.index];
-                
+              {patterns.map((p) => {
                 return (
                   <tr 
-                    key={virtualRow.key} 
-                    data-index={virtualRow.index}
-                    ref={virtualizer.measureElement}
+                    key={p.name} 
                     className="hover:bg-muted/30 transition-colors"
                   >
                     <td className="px-6 py-4 font-bold text-foreground">
@@ -147,12 +126,6 @@ export default function PatternsTableClient({ patterns }: { patterns: PatternPro
                   </tr>
                 );
               })}
-
-              {virtualizer.getVirtualItems().length > 0 && (
-                <tr style={{ height: `${virtualizer.getTotalSize() - (virtualizer.getVirtualItems()[virtualizer.getVirtualItems().length - 1]?.end ?? 0)}px` }}>
-                  <td colSpan={7} />
-                </tr>
-              )}
             </tbody>
           </table>
         </div>

@@ -29,7 +29,7 @@ export default async function ReviewsPage() {
         </Link>
       </div>
 
-      <div className="glass rounded-2xl border border-border/50 overflow-hidden">
+      <div className="glass rounded-2xl border border-border/50">
         <Suspense fallback={<Skeleton className="w-full h-[400px]" />}>
           <ReviewsTableFetcher userId={session.user.id} />
         </Suspense>

@@ -1,7 +1,5 @@
 "use client";
 
-import { useWindowVirtualizer } from '@tanstack/react-virtual';
-import { useRef } from 'react';
 import { BrainCircuit, AlertCircle } from "lucide-react";
 
 type ReviewProp = {
@@ -28,28 +26,19 @@ const ratingMap: Record<number, { label: string, color: string }> = {
 };
 
 export default function ReviewsTableClient({ reviews }: { reviews: ReviewProp[] }) {
-  const tableRef = useRef<HTMLTableElement>(null);
-  
-  const virtualizer = useWindowVirtualizer({
-    count: reviews.length,
-    estimateSize: () => 64, // Approx height of a review row
-    overscan: 5,
-    scrollMargin: tableRef.current?.offsetTop ?? 0,
-  });
-
   return (
-    <div className="overflow-x-auto w-full">
-      <table ref={tableRef} className="w-full text-sm text-left whitespace-nowrap">
-        <thead className="bg-secondary/30 text-muted-foreground font-medium border-b border-border/50 sticky top-16 z-40 shadow-sm">
+    <div className="overflow-x-auto w-full rounded-2xl">
+      <table className="w-full text-sm text-left whitespace-nowrap">
+        <thead className="text-muted-foreground font-medium border-b border-border/50">
           <tr>
-            <th className="px-6 py-4">Date</th>
-            <th className="px-6 py-4">Problem</th>
-            <th className="px-6 py-4">Rating</th>
-            <th className="px-6 py-4">Time</th>
-            <th className="px-6 py-4">Status</th>
-            <th className="px-6 py-4">Pattern</th>
-            <th className="px-6 py-4">Bugs</th>
-            <th className="px-6 py-4">Difficulty</th>
+            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Date</th>
+            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Problem</th>
+            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Rating</th>
+            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Time</th>
+            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Status</th>
+            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Pattern</th>
+            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Bugs</th>
+            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Difficulty</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border/30">
@@ -61,22 +50,13 @@ export default function ReviewsTableClient({ reviews }: { reviews: ReviewProp[] 
             </tr>
           )}
 
-          {virtualizer.getVirtualItems().length > 0 && (
-            <tr style={{ height: `${virtualizer.getVirtualItems()[0]?.start ?? 0}px` }}>
-              <td colSpan={8} />
-            </tr>
-          )}
-
-          {virtualizer.getVirtualItems().map((virtualRow) => {
-            const review = reviews[virtualRow.index];
+          {reviews.map((review) => {
             const ratingInfo = ratingMap[review.rating] || { label: 'Unknown', color: 'text-muted-foreground bg-muted' };
             
             return (
               <tr 
-                key={virtualRow.key} 
-                data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
-                className="hover:bg-muted/30 transition-colors"
+                key={review.id} 
+                className="hover:bg-muted/30 transition-colors virtual-row"
               >
                 <td className="px-6 py-4 text-muted-foreground">
                   <div className="flex flex-col">
@@ -136,12 +116,6 @@ export default function ReviewsTableClient({ reviews }: { reviews: ReviewProp[] 
               </tr>
             );
           })}
-
-          {virtualizer.getVirtualItems().length > 0 && (
-            <tr style={{ height: `${virtualizer.getTotalSize() - (virtualizer.getVirtualItems()[virtualizer.getVirtualItems().length - 1]?.end ?? 0)}px` }}>
-              <td colSpan={8} />
-            </tr>
-          )}
         </tbody>
       </table>
     </div>

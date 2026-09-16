@@ -1,7 +1,5 @@
 "use client";
 
-import { useWindowVirtualizer } from '@tanstack/react-virtual';
-import { useRef } from 'react';
 import Link from 'next/link';
 
 export type ProblemProp = {
@@ -24,35 +22,26 @@ export type ProblemProp = {
 };
 
 export default function ProblemsTableClient({ problems }: { problems: ProblemProp[] }) {
-  const tableRef = useRef<HTMLTableElement>(null);
-  
-  const virtualizer = useWindowVirtualizer({
-    count: problems.length,
-    estimateSize: () => 52, // Approx height of a row
-    overscan: 5,
-    scrollMargin: tableRef.current?.offsetTop ?? 0,
-  });
-
   return (
-    <div className="overflow-x-auto w-full">
-      <table ref={tableRef} className="w-full text-sm text-left border-collapse whitespace-nowrap">
-        <thead className="text-xs uppercase bg-secondary/50 text-muted-foreground">
+    <div className="overflow-x-auto w-full rounded-2xl">
+      <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
+        <thead className="text-xs uppercase text-muted-foreground border-b border-border/50">
           <tr>
-            <th className="px-4 py-4 font-semibold tracking-wider">ID</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">Problem Name</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">Difficulty</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">Pattern</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">First Solved</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">Last Review</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">State</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">Reps (Lapses)</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">Scratch %</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">Hint %</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">Avg Time</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">Next Review</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">S (D)</th>
-            <th className="px-4 py-4 font-semibold tracking-wider">Interval</th>
-            <th className="px-4 py-4 font-semibold tracking-wider text-right">Action</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">ID</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Problem Name</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Difficulty</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Pattern</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">First Solved</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Last Review</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">State</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Reps (Lapses)</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Scratch %</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Hint %</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Avg Time</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Next Review</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">S (D)</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Interval</th>
+            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md text-right">Action</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border/50">
@@ -65,22 +54,13 @@ export default function ProblemsTableClient({ problems }: { problems: ProblemPro
             </tr>
           )}
           
-          {virtualizer.getVirtualItems().length > 0 && (
-            <tr style={{ height: `${virtualizer.getVirtualItems()[0]?.start ?? 0}px` }}>
-              <td colSpan={15} />
-            </tr>
-          )}
-
-          {virtualizer.getVirtualItems().map((virtualRow) => {
-            const p = problems[virtualRow.index];
+          {problems.map((p) => {
             const difficultyClass = p.difficulty === 'Easy' ? 'badge-easy' : p.difficulty === 'Medium' ? 'badge-medium' : p.difficulty === 'Hard' ? 'badge-hard' : 'bg-secondary text-secondary-foreground';
             
             return (
               <tr 
-                key={virtualRow.key} 
-                data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
-                className="bg-background/50 hover:bg-background transition-colors group"
+                key={p.id} 
+                className="bg-background/50 hover:bg-background transition-colors group virtual-row"
               >
                 <td className="px-4 py-3 font-medium text-muted-foreground">{p.leetcodeId}</td>
                 <td className="px-4 py-3 font-semibold truncate max-w-[200px]" title={p.title}>{p.title}</td>
@@ -117,12 +97,6 @@ export default function ProblemsTableClient({ problems }: { problems: ProblemPro
               </tr>
             );
           })}
-
-          {virtualizer.getVirtualItems().length > 0 && (
-            <tr style={{ height: `${virtualizer.getTotalSize() - (virtualizer.getVirtualItems()[virtualizer.getVirtualItems().length - 1]?.end ?? 0)}px` }}>
-              <td colSpan={15} />
-            </tr>
-          )}
         </tbody>
       </table>
     </div>

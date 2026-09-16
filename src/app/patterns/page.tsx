@@ -7,7 +7,14 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import PatternsTableFetcher from "./PatternsTableFetcher";
 
+import { Metadata } from "next";
+
 export const instant = false;
+
+export const metadata: Metadata = {
+  title: "Pattern Mastery",
+  description: "Analyze problem pattern distribution and master weak algorithmic topics.",
+};
 
 export default async function PatternsPage() {
   const session = await getServerSession(authOptions);

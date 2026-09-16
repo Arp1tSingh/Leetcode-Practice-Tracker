@@ -6,7 +6,26 @@ import ReviewForm from "./ReviewForm";
 import Link from "next/link";
 import { ExternalLink, X, BrainCircuit } from "lucide-react";
 
+import { Metadata } from "next";
+
 export const instant = false;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const problem = await prisma.problem.findUnique({
+    where: { id },
+    select: { title: true },
+  });
+
+  return {
+    title: problem ? `Review: ${problem.title}` : "Review Problem",
+    description: "Rate problem recall difficulty using the FSRS memory engine.",
+  };
+}
 
 export default async function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);

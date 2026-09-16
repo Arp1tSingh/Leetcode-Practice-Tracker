@@ -7,7 +7,14 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ProblemsTableFetcher from "./ProblemsTableFetcher";
 
+import { Metadata } from "next";
+
 export const instant = false;
+
+export const metadata: Metadata = {
+  title: "Problem Directory",
+  description: "Browse, filter, and manage your solved LeetCode problems with spaced repetition intervals.",
+};
 
 export default async function ProblemsPage() {
   const session = await getServerSession(authOptions);

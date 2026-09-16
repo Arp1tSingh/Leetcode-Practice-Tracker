@@ -7,7 +7,14 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReviewsTableFetcher from "./ReviewsTableFetcher";
 
+import { Metadata } from "next";
+
 export const instant = false;
+
+export const metadata: Metadata = {
+  title: "Review History",
+  description: "Inspect historical practice sessions and FSRS memory state transitions.",
+};
 
 export default async function ReviewsPage() {
   const session = await getServerSession(authOptions);

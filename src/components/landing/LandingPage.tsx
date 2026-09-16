@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
+import Image from "next/image";
 import "./landing.css";
 
 const dashboardSignals = [
@@ -74,6 +75,7 @@ function MetricCard({ item, index }: { item: (typeof dashboardSignals)[number]; 
 export function LandingPage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [showStickyCta, setShowStickyCta] = useState(false);
   const { theme, setTheme } = useTheme();
 
   const toggleTheme = () => {
@@ -97,7 +99,16 @@ export function LandingPage() {
       { threshold: 0.14, rootMargin: "0px 0px -48px" },
     );
     revealed.forEach(element => observer.observe(element));
-    return () => observer.disconnect();
+
+    const handleScroll = () => {
+      setShowStickyCta(window.scrollY > 420);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   const jumpToLoop = () => document.getElementById("the-loop")?.scrollIntoView({ behavior: "smooth" });
@@ -146,7 +157,17 @@ export function LandingPage() {
 
           <div className="hero-visual reveal" style={{ "--delay": "140ms" } as React.CSSProperties}>
             <div className="visual-halo" />
-            <div className="visual-backdrop"><img src="/manus-storage/loopframe-hero-dashboard_c684c0cb.png" alt="Abstract dark product dashboard visual" /></div>
+            <div className="visual-backdrop">
+              <Image
+                src="/manus-storage/loopframe-hero-dashboard_c684c0cb.png"
+                alt="Abstract dark product dashboard visual"
+                width={960}
+                height={540}
+                priority
+                sizes="(max-width: 768px) 100vw, 600px"
+                className="rounded-2xl object-cover"
+              />
+            </div>
             <div className="phone-surface">
               <div className="phone-topline"><span>Today’s loop</span><span>09:41</span></div>
               <div className="phone-heading"><p>Focus queue</p><strong>12 due today</strong></div>
@@ -194,13 +215,29 @@ export function LandingPage() {
             </dl>
           </div>
           <div className="retention-visual reveal" style={{ "--delay": "110ms" } as React.CSSProperties}>
-            <img src="/manus-storage/loopframe-retention-detail_e2b0c0de.png" alt="Abstract retention curve visualization" />
+            <Image
+              src="/manus-storage/loopframe-retention-detail_e2b0c0de.png"
+              alt="Abstract retention curve visualization"
+              width={600}
+              height={400}
+              sizes="(max-width: 768px) 100vw, 500px"
+              className="rounded-2xl object-cover"
+            />
             <div className="curve-overlay"><span>RETRIEVABILITY</span><strong>92.4%</strong><small>↑ 8.1 pts this cycle</small></div>
           </div>
         </section>
 
         <section className="workflow-section content-section">
-          <div className="workflow-image reveal"><img src="/manus-storage/loopframe-workflow-detail_4908fede.png" alt="Stack of abstract review cards" /></div>
+          <div className="workflow-image reveal">
+            <Image
+              src="/manus-storage/loopframe-workflow-detail_4908fede.png"
+              alt="Stack of abstract review cards"
+              width={600}
+              height={400}
+              sizes="(max-width: 768px) 100vw, 500px"
+              className="rounded-2xl object-cover"
+            />
+          </div>
           <div className="workflow-copy">
             <SectionRule label="FOR THE LONG GAME" />
             <h2 className="reveal">Practice becomes a personal playbook.</h2>
@@ -216,10 +253,57 @@ export function LandingPage() {
           <Link href="/login" className="button button-primary closing-button reveal" style={{ "--delay": "130ms" } as React.CSSProperties}>Start the loop <ArrowUpRight size={18} /></Link>
         </section>
 
+        {showStickyCta && (
+          <aside aria-label="Quick registration CTA" className="sticky-mobile-cta">
+            <div className="sticky-mobile-cta-inner">
+              <div className="sticky-cta-text">
+                <p className="sticky-cta-title">Ready to lock in recall?</p>
+                <p className="sticky-cta-sub">Free spaced repetition for LeetCode</p>
+              </div>
+              <Link href="/login" className="button button-primary sticky-cta-button">
+                Start Loop <ArrowUpRight size={16} />
+              </Link>
+            </div>
+          </aside>
+        )}
+
         <footer className="site-footer">
-          <a className="brand" href="#top"><span>LEETCODE FSRS</span></a>
-          <p>Built for durable technical recall.</p>
-          <span>© 2026</span>
+          <div className="footer-top">
+            <div className="footer-brand-col">
+              <a className="brand" href="#top"><span>LEETCODE FSRS</span></a>
+              <p className="footer-desc">
+                Transform one-off LeetCode practice into durable algorithmic intuition with the FSRS spaced repetition engine.
+              </p>
+              <div className="footer-contact">
+                <span>Support: </span>
+                <a href="mailto:support@leetcodefsrs.com" className="text-link">support@leetcodefsrs.com</a>
+              </div>
+            </div>
+
+            <nav className="footer-links-grid" aria-label="Footer navigation">
+              <div className="footer-col">
+                <h4>Product</h4>
+                <a href="#the-loop">The Loop</a>
+                <a href="#signal">Retention Signal</a>
+                <Link href="/login">Sign In</Link>
+                <Link href="/problems">Problem Directory</Link>
+              </div>
+              <div className="footer-col">
+                <h4>Legal & Info</h4>
+                <Link href="/privacy">Privacy Policy</Link>
+                <Link href="/terms">Terms of Service</Link>
+                <Link href="/thank-you">Getting Started</Link>
+                <a href="https://github.com/Arp1tSingh/Leetcode-Practice-Tracker" target="_blank" rel="noopener noreferrer">GitHub Project</a>
+              </div>
+            </nav>
+          </div>
+
+          <div className="footer-bottom">
+            <p className="disclaimer">
+              Independent study tool. Not affiliated with or endorsed by LeetCode Inc.
+            </p>
+            <span>© 2026 LeetCode FSRS. All rights reserved.</span>
+          </div>
         </footer>
       </main>
     </div>

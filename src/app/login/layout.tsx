@@ -1,5 +1,10 @@
-import AppLayout from "@/components/AppLayout";
+import { Metadata } from 'next';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  return <AppLayout>{children}</AppLayout>;
+export const metadata: Metadata = {
+  title: 'Sign In / Sign Up',
+  description: 'Sign in to LeetCode FSRS to review due problems, sync submissions, and master data structures & algorithms.',
+};
+
+export default function LoginLayout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }

@@ -16,6 +16,8 @@ model User {
   password         String?   // Added for simple Credentials auth
   leetcodeUsername String?   // Added for LeetCode syncing
   dailyReviewLimit Int       @default(6) // Paced daily review cap
+  resetToken       String?   @unique // Password recovery token
+  resetTokenExpiry DateTime? // Expiration for reset token
   problems         Problem[]
   reviews          Review[]
   createdAt        DateTime  @default(now())

@@ -6,6 +6,12 @@ import { getProblemByFrontendId, getProblemByTitleSlug, getRecentSubmissions } f
 import { revalidatePath } from 'next/cache';
 import { Card, Rating, Grade, createEmptyCard } from 'ts-fsrs';
 import { LeetCode } from 'leetcode-query';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { sendPasswordResetEmail } from './email';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth';
+import { headers } from 'next/headers';
 
 export async function addProblemAction(
   userId: string, 
@@ -448,4 +454,188 @@ export async function syncLeetcodeProfile(
     syncLockSet.delete(userId);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Password Recovery & Reset Actions
+// ---------------------------------------------------------------------------
+
+function maskEmail(email: string): string {
+  const parts = email.split('@');
+  if (parts.length !== 2) return '***';
+  const name = parts[0];
+  const domain = parts[1];
+  const maskedName = name.length <= 2 
+    ? name.charAt(0) + '*' 
+    : name.charAt(0) + '*'.repeat(Math.min(name.length - 2, 5)) + name.charAt(name.length - 1);
+  return `${maskedName}@${domain}`;
+}
+
+export async function requestPasswordResetAction(identifier: string) {
+  try {
+    const trimmed = identifier?.trim();
+    if (!trimmed) {
+      return { error: 'Please enter your username or recovery email.' };
+    }
+
+    // Lookup user by username or recovery email (case-insensitive)
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: { equals: trimmed, mode: 'insensitive' } },
+          { email: { equals: trimmed, mode: 'insensitive' } },
+        ],
+      },
+    });
+
+    if (!user) {
+      return { error: 'No account found matching that username or email address.' };
+    }
+
+    if (!user.email || !user.email.includes('@')) {
+      return { 
+        error: 'This account does not have a recovery email configured. Please contact support via the Contact option for assistance.' 
+      };
+    }
+
+    // Generate random 64-char hex token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 3600000); // 1 hour expiration
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetToken: token,
+        resetTokenExpiry: expiry,
+      },
+    });
+
+    // Determine host origin for the reset link
+    let origin = process.env.NEXTAUTH_URL;
+    if (!origin || origin.includes('localhost')) {
+      try {
+        const headerList = await headers();
+        const host = headerList.get('host');
+        const proto = headerList.get('x-forwarded-proto') || 'http';
+        if (host) origin = `${proto}://${host}`;
+      } catch (e) {
+        // Fallback
+      }
+    }
+    origin = (origin || 'http://localhost:3000').replace(/\/$/, '');
+    const resetUrl = `${origin}/reset-password?token=${token}`;
+
+    // Dispatch email
+    const emailResult = await sendPasswordResetEmail({
+      toEmail: user.email,
+      userName: user.name || user.username,
+      resetUrl,
+    });
+
+    return {
+      success: true,
+      email: maskEmail(user.email),
+      devResetUrl: emailResult.dispatched ? undefined : resetUrl,
+    };
+  } catch (error: any) {
+    console.error('Password reset request error:', error);
+    return { error: error.message || 'Failed to process password reset request.' };
+  }
+}
+
+export async function verifyResetTokenAction(token: string) {
+  try {
+    if (!token || typeof token !== 'string') {
+      return { valid: false, error: 'Reset token is missing or malformed.' };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { resetToken: token },
+      select: { id: true, username: true, resetTokenExpiry: true },
+    });
+
+    if (!user) {
+      return { valid: false, error: 'Invalid or already used password reset link.' };
+    }
+
+    if (!user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      return { valid: false, error: 'This password reset link has expired (links are valid for 1 hour).' };
+    }
+
+    return { valid: true, username: user.username };
+  } catch (error: any) {
+    return { valid: false, error: 'Failed to verify reset link.' };
+  }
+}
+
+export async function resetPasswordAction(token: string, newPassword: string) {
+  try {
+    if (!token || typeof token !== 'string') {
+      return { error: 'Invalid or missing reset token.' };
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      return { error: 'Password must be at least 6 characters long.' };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { resetToken: token },
+    });
+
+    if (!user) {
+      return { error: 'Invalid password reset token. Please request a new one.' };
+    }
+
+    if (!user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      return { error: 'This password reset token has expired. Please request a new link.' };
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null,
+      },
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Password reset error:', error);
+    return { error: error.message || 'Failed to reset password.' };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Account Deletion Action
+// ---------------------------------------------------------------------------
+
+export async function deleteAccountAction(userId: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    const sessionUserId = (session?.user as any)?.id;
+
+    if (!sessionUserId || sessionUserId !== userId) {
+      return { error: 'Unauthorized. You can only delete your own account.' };
+    }
+
+    // Atomic cascading deletion: reviews, problems, contact messages, user
+    await prisma.$transaction([
+      prisma.review.deleteMany({ where: { userId } }),
+      prisma.problem.deleteMany({ where: { userId } }),
+      prisma.contactMessage.updateMany({
+        where: { userId },
+        data: { userId: null },
+      }),
+      prisma.user.delete({ where: { id: userId } }),
+    ]);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting account:', error);
+    return { error: error.message || 'Failed to delete account. Please try again.' };
+  }
+}
+
 

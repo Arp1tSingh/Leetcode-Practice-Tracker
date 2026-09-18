@@ -149,3 +149,91 @@ export async function sendContactNotificationEmail(params: ContactNotificationPa
     error: emailError,
   };
 }
+
+export async function sendPasswordResetEmail({
+  toEmail,
+  userName,
+  resetUrl,
+}: {
+  toEmail: string;
+  userName: string;
+  resetUrl: string;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "LeetCode Repetition <onboarding@resend.dev>";
+
+  const emailHtml = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset your password</title>
+  </head>
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #030712; color: #f3f4f6; margin: 0; padding: 24px;">
+    <div style="max-width: 560px; margin: 0 auto; background-color: #111827; border: 1px solid #1f2937; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);">
+      
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); padding: 28px 24px; text-align: center; border-bottom: 1px solid #1f2937;">
+        <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; border-radius: 12px; background-color: #4f46e5; color: #ffffff; font-weight: 800; font-size: 20px; margin-bottom: 12px;">
+          LF
+        </div>
+        <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700;">Password Reset Request</h1>
+        <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 14px;">LeetCode Spaced Repetition (FSRS)</p>
+      </div>
+
+      <!-- Content -->
+      <div style="padding: 28px 24px;">
+        <p style="margin: 0 0 16px 0; font-size: 15px; color: #e2e8f0; line-height: 1.6;">
+          Hello <strong style="color: #ffffff;">${escapeHtml(userName)}</strong>,
+        </p>
+        <p style="margin: 0 0 24px 0; font-size: 14px; color: #94a3b8; line-height: 1.6;">
+          We received a request to reset the password for your LeetCode FSRS account. Click the button below to choose a new password:
+        </p>
+
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${escapeHtml(resetUrl)}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.4);">
+            Reset Password
+          </a>
+        </div>
+
+        <p style="margin: 24px 0 0 0; font-size: 13px; color: #64748b; line-height: 1.6;">
+          ⏳ <strong>Security Notice:</strong> This link is valid for <strong>1 hour</strong>. If you did not request a password reset, you can safely ignore this email; your existing password will remain unchanged.
+        </p>
+
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #1f2937; word-break: break-all; font-size: 12px; color: #475569;">
+          If the button doesn't work, copy and paste this link into your browser:<br>
+          <a href="${escapeHtml(resetUrl)}" style="color: #818cf8; text-decoration: underline;">${escapeHtml(resetUrl)}</a>
+        </div>
+      </div>
+
+    </div>
+  </body>
+</html>
+  `;
+
+  if (apiKey) {
+    try {
+      const resend = new Resend(apiKey);
+      const { data, error } = await resend.emails.send({
+        from: fromEmail,
+        to: [toEmail],
+        subject: "Reset your LeetCode FSRS password",
+        html: emailHtml,
+      });
+
+      if (error) {
+        console.error("[Email Dispatch] Resend error sending password reset:", error);
+        return { dispatched: false, error: error.message };
+      }
+      return { dispatched: true, id: data?.id };
+    } catch (err: any) {
+      console.error("[Email Dispatch] Failed to send password reset email:", err);
+      return { dispatched: false, error: err.message };
+    }
+  } else {
+    console.warn(`[Email Dispatch] RESEND_API_KEY is not set. Reset link for ${toEmail}: ${resetUrl}`);
+    return { dispatched: false, reason: "NO_API_KEY", resetUrl };
+  }
+}
+

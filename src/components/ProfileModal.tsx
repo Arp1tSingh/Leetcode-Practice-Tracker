@@ -3,9 +3,22 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { X, User, ExternalLink, LogOut, ShieldCheck, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
+import { signOut } from 'next-auth/react';
+import { 
+  X, 
+  User, 
+  ExternalLink, 
+  LogOut, 
+  ShieldCheck, 
+  CheckCircle2, 
+  AlertCircle, 
+  HelpCircle,
+  AlertTriangle,
+  Trash2
+} from 'lucide-react';
 import SyncLeetcodeSection from './SyncLeetcodeSection';
 import { ContactModal } from './ContactModal';
+import { deleteAccountAction } from '@/lib/actions';
 
 export interface ProfileUser {
   id: string;
@@ -28,6 +41,12 @@ export function ProfileModal({
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  // Delete account modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -40,7 +59,15 @@ export function ProfileModal({
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (isDeleteModalOpen) {
+          setIsDeleteModalOpen(false);
+        } else if (isContactOpen) {
+          setIsContactOpen(false);
+        } else {
+          onClose();
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -51,7 +78,26 @@ export function ProfileModal({
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = originalOverflow;
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isDeleteModalOpen, isContactOpen]);
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmInput.trim() !== 'DELETE') return;
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const res = await deleteAccountAction(user.id);
+      if (res.error) {
+        setDeleteError(res.error);
+        setIsDeleting(false);
+      } else {
+        await signOut({ callbackUrl: '/login?deleted=true' });
+      }
+    } catch (err: any) {
+      setDeleteError(err.message || 'Failed to delete account. Please try again.');
+      setIsDeleting(false);
+    }
+  };
 
   if (!isOpen || !mounted) return null;
 
@@ -64,7 +110,7 @@ export function ProfileModal({
       aria-labelledby="profile-modal-title"
       className="fixed inset-0 z-[9999] overflow-y-auto bg-background/80 backdrop-blur-md p-3 sm:p-6 flex justify-center items-start sm:items-center animate-in fade-in duration-200"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !isDeleteModalOpen) onClose();
       }}
     >
       <div className="relative w-full max-w-4xl my-auto max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] flex flex-col rounded-3xl border border-border/70 shadow-2xl overflow-hidden bg-card text-foreground animate-in zoom-in-95 duration-200">
@@ -118,7 +164,7 @@ export function ProfileModal({
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6">
+        <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-7">
           <div className="space-y-2">
             <h3 className="text-base font-semibold tracking-tight text-foreground">
               Integrations & Synchronization
@@ -134,6 +180,35 @@ export function ProfileModal({
             embedded={true}
             onUsernameSaved={(newUsername) => setCurrentLcUsername(newUsername)}
           />
+
+          {/* Danger Zone */}
+          <div className="pt-6 border-t border-destructive/20 space-y-3">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-4 h-4" />
+              <h3 className="text-xs font-bold tracking-wider uppercase">Danger Zone</h3>
+            </div>
+
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold text-foreground">Delete Account</h4>
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
+                  Permanently delete your account and wipe all stored data including problems, spaced repetition review logs, and statistics. This action is irreversible.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteError(null);
+                  setDeleteConfirmInput('');
+                  setIsDeleteModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs font-semibold transition-all shadow-sm active:scale-[0.98] shrink-0 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Account
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
@@ -141,7 +216,7 @@ export function ProfileModal({
           <button
             type="button"
             onClick={() => setIsContactOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/60 border border-border/50 transition-colors w-full sm:w-auto justify-center"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/60 border border-border/50 transition-colors w-full sm:w-auto justify-center cursor-pointer"
           >
             <HelpCircle className="w-4 h-4 text-amber-500" />
             Contact for Help
@@ -150,7 +225,7 @@ export function ProfileModal({
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-border/60 text-sm font-medium hover:bg-secondary/60 transition-colors"
+              className="px-4 py-2.5 rounded-xl border border-border/60 text-sm font-medium hover:bg-secondary/60 transition-colors cursor-pointer"
             >
               Close
             </button>
@@ -172,6 +247,95 @@ export function ProfileModal({
         userEmail={user.email}
         leetcodeUsername={currentLcUsername}
       />
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen &&
+        createPortal(
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-account-title"
+            className="fixed inset-0 z-[10000] overflow-y-auto bg-background/80 backdrop-blur-md p-4 flex justify-center items-center animate-in fade-in duration-200"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !isDeleting) {
+                setIsDeleteModalOpen(false);
+              }
+            }}
+          >
+            <div className="relative w-full max-w-md my-auto rounded-3xl border border-destructive/40 shadow-2xl bg-card text-foreground overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="p-6 sm:p-7 space-y-5">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive shrink-0 shadow-sm">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 id="delete-account-title" className="text-lg font-bold text-foreground">
+                      Delete Account Permanently?
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      This action cannot be undone
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive leading-relaxed">
+                  <strong>Warning:</strong> Deleting your account will immediately and permanently purge all your registered problems, review logs, FSRS spaced repetition progress, and settings.
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-foreground block">
+                    To confirm deletion, please type <strong className="text-destructive font-mono uppercase">DELETE</strong> below:
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteConfirmInput}
+                    onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                    placeholder="DELETE"
+                    disabled={isDeleting}
+                    autoFocus
+                    className="w-full px-4 py-2.5 rounded-xl bg-background border border-border/60 focus:border-destructive focus:ring-1 focus:ring-destructive outline-none text-sm font-mono transition-all placeholder:text-muted-foreground/40"
+                  />
+                </div>
+
+                {deleteError && (
+                  <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium animate-in fade-in">
+                    {deleteError}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border/40">
+                  <button
+                    type="button"
+                    disabled={isDeleting}
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-border/60 text-xs font-semibold hover:bg-secondary/60 transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deleteConfirmInput.trim() !== 'DELETE' || isDeleting}
+                    onClick={handleDeleteAccount}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs font-semibold transition-all shadow-sm active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-destructive-foreground/30 border-t-destructive-foreground rounded-full animate-spin" />
+                        <span>Deleting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Permanently Delete</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>,
     document.body
   );

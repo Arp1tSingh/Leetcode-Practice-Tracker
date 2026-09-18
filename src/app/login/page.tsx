@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { signIn, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { LogIn, UserPlus, ArrowRight, BookOpen, Check } from 'lucide-react';
-import { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { LogIn, UserPlus, ArrowRight, BookOpen, Check, CheckCircle2 } from 'lucide-react';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isDeleted = searchParams.get('deleted') === 'true';
+
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -67,6 +70,14 @@ export default function LoginPage() {
           <p className="text-muted-foreground">Master patterns with spaced repetition.</p>
         </div>
 
+        {/* Deleted Confirmation Banner */}
+        {isDeleted && (
+          <div className="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-sm font-medium flex items-center gap-3 animate-in fade-in slide-in-from-top-2 shadow-sm">
+            <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <span>Your account and all associated data have been permanently deleted.</span>
+          </div>
+        )}
+
         {/* Auth Card */}
         <div className="glass rounded-3xl overflow-hidden border border-border/50 animate-in fade-in zoom-in-95 duration-500 delay-150 fill-mode-both shadow-2xl">
           
@@ -121,7 +132,17 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Password</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-foreground">Password</label>
+                  {activeTab === 'login' && (
+                    <Link
+                      href="/forgot-password"
+                      className="text-xs font-medium text-primary hover:underline transition-colors"
+                    >
+                      Forgot password?
+                    </Link>
+                  )}
+                </div>
                 <input
                   type="password"
                   required
@@ -172,7 +193,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm transition-all hover:bg-primary/90 active:scale-[0.98] shadow-md flex items-center justify-center gap-2 group disabled:opacity-70 disabled:pointer-events-none mt-2"
+                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm transition-all hover:bg-primary/90 active:scale-[0.98] shadow-md flex items-center justify-center gap-2 group disabled:opacity-70 disabled:pointer-events-none mt-2 cursor-pointer"
               >
                 {isLoading ? (
                   <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
@@ -190,5 +211,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[80vh] items-center justify-center">
+        <div className="w-8 h-8 border-3 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

@@ -11,7 +11,8 @@ import {
   RefreshCw, 
   CheckCircle2, 
   AlertCircle,
-  ShieldCheck
+  ShieldCheck,
+  Inbox
 } from 'lucide-react';
 import { ProfileModal, ProfileUser } from './ProfileModal';
 import { ContactModal } from './ContactModal';
@@ -32,6 +33,7 @@ export function UserProfileButton({
 
   const displayName = user.name || user.username || 'Developer';
   const hasLc = Boolean(user.leetcodeUsername);
+  const isAdmin = user.email?.toLowerCase() === 'arpitsingh8534@gmail.com' || user.username?.toLowerCase() === 'arp1t';
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -114,6 +116,17 @@ export function UserProfileButton({
               <HelpCircle className="w-4 h-4 text-amber-500" />
               <span>Contact for Help</span>
             </button>
+
+            {isAdmin && (
+              <Link
+                href="/admin/messages"
+                onClick={() => setIsDropdownOpen(false)}
+                className="flex items-center gap-2.5 w-full p-2.5 rounded-xl hover:bg-secondary/60 text-xs font-medium text-foreground transition-colors text-left"
+              >
+                <Inbox className="w-4 h-4 text-indigo-500" />
+                <span>Admin Support Inbox</span>
+              </Link>
+            )}
 
             <Link
               href="/signout"
@@ -265,6 +278,30 @@ export function UserProfileButton({
                 </p>
               </div>
             </button>
+
+            {/* 3. Admin Support Inbox (Only visible to admin) */}
+            {isAdmin && (
+              <Link
+                href="/admin/messages"
+                onClick={() => setIsDropdownOpen(false)}
+                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-secondary/70 text-left transition-colors group cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500 group-hover:scale-105 transition-transform">
+                  <Inbox className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-semibold text-foreground">Support Inbox</p>
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase">
+                      Admin
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    Review user questions & feedback
+                  </p>
+                </div>
+              </Link>
+            )}
           </div>
 
           {/* Footer & Sign Out */}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendContactNotificationEmail } from "@/lib/email";
 
 // In-memory rate limiting store: key -> list of timestamps
 const rateLimitMap = new Map<string, number[]>();
@@ -126,9 +127,22 @@ export async function POST(req: NextRequest) {
     rateLimitMap.set(rateLimitKey, recentOneHour);
     lastMessageHashMap.set(rateLimitKey, { hash: normalizedMessage, timestamp: now });
 
+    // 6. Dispatch Email Notification (Resend / Webhook)
+    const emailResult = await sendContactNotificationEmail({
+      id: saved.id,
+      name: finalName,
+      email: finalEmail,
+      category: sanitizedCategory,
+      subject: subject.trim(),
+      message: message.trim(),
+      clientIp,
+      userId,
+    });
+
     return NextResponse.json({
       success: true,
       id: saved.id,
+      emailDispatched: emailResult.dispatched,
       message: "Your message has been sent successfully. We will review it shortly!",
     });
   } catch (error: any) {

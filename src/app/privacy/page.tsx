@@ -88,7 +88,7 @@ export default function PrivacyPolicyPage() {
             You retain the right to inspect, export, or delete your account data at any time. For privacy inquiries, data deletion requests, or technical support, please contact us:
           </p>
           <div className="p-4 rounded-2xl bg-secondary/50 border border-border/40 text-sm space-y-1">
-            <p><strong className="text-foreground">Email:</strong> <a href="mailto:support@leetcodefsrs.com" className="text-primary hover:underline">support@leetcodefsrs.com</a></p>
+            <p><strong className="text-foreground">Email:</strong> <a href="mailto:rpit.singh2000@gmail.com" className="text-primary hover:underline">support@leetcodefsrs.com</a></p>
             <p><strong className="text-foreground">Project Repository:</strong> <a href="https://github.com/Arp1tSingh/Leetcode-Practice-Tracker" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">GitHub / LeetCode FSRS</a></p>
             <p><strong className="text-foreground">Correspondence:</strong> Digital Nomad / Remote Open Source Operations</p>
           </div>

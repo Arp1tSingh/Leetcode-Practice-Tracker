@@ -1,8 +1,20 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { setLeetcodeUsername, syncLeetcodeProfile, importCsvBatchAction } from '@/lib/actions';
-import { RefreshCw, Upload, Save, UserCircle, Sparkles } from 'lucide-react';
+import { setLeetcodeUsername, syncLeetcodeProfile, importCsvBatchAction, CsvProblemInput } from '@/lib/actions';
+import { 
+  RefreshCw, 
+  Upload, 
+  Save, 
+  UserCircle, 
+  Sparkles, 
+  FileSpreadsheet, 
+  Download, 
+  ChevronDown, 
+  CheckCircle2, 
+  Info,
+  FileText 
+} from 'lucide-react';
 import BookmarkletCard from '@/components/BookmarkletCard';
 
 export default function SyncLeetcodeSection({ 
@@ -22,7 +34,28 @@ export default function SyncLeetcodeSection({
   const [isImporting, setIsImporting] = useState(false);
   const [calibration, setCalibration] = useState<'confident' | 'need_practice'>('confident');
   const [message, setMessage] = useState('');
+  const [showFormatGuide, setShowFormatGuide] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const downloadSampleCsv = () => {
+    const csvContent = 
+`Problem ID,Problem Name,Difficulty,Pattern
+1,Two Sum,Easy,Array
+20,Valid Parentheses,Easy,Stack
+15,3Sum,Medium,Two Pointers
+200,Number of Islands,Medium,Graph BFS/DFS
+146,LRU Cache,Medium,Design
+`;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'leetcode_import_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   // Automatic background sync on visit with 15-minute cooldown safeguard
   useEffect(() => {
@@ -83,49 +116,103 @@ export default function SyncLeetcodeSection({
         skipEmptyLines: true,
         complete: async (results) => {
           try {
-            const data = results.data as Record<string, string>[];
-            if (!data.length) {
-              throw new Error("CSV is empty or missing headers");
+            const rawData = results.data as Record<string, string>[];
+            if (!rawData.length) {
+              throw new Error("The uploaded CSV file is empty or has no rows.");
             }
             
-            // Find the ID column
-            const headers = Object.keys(data[0]);
+            const headers = Object.keys(rawData[0]);
+            const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+
+            // Find ID column: matches 'id', 'problem id', 'question id', 'frontend_question_id', '#', etc.
             const idCol = headers.find(h => {
-              const lower = h.toLowerCase().replace(/["']/g, '').trim();
-              return lower === 'id' || lower === 'questionid' || lower === 'frontend_question_id' || lower === 'question id';
+              const n = normalize(h);
+              return ['id', 'problemid', 'questionid', 'frontendquestionid', 'frontendid', 'number', 'no', 'leetcodeid'].includes(n);
             });
 
             if (!idCol) {
-              throw new Error("CSV must contain an 'id' or 'questionId' column");
+              throw new Error("Could not find an ID column. Please ensure your CSV includes a 'Problem ID', 'id', 'questionId', or '#' column.");
             }
 
-            const ids = data
-              .map(row => parseInt(row[idCol]?.replace(/["']/g, '').trim() || '', 10))
-              .filter(id => !isNaN(id) && id > 0);
+            // Find optional rich metadata columns (speeds up import and avoids external LeetCode network calls)
+            const titleCol = headers.find(h => {
+              const n = normalize(h);
+              return ['title', 'problemname', 'name', 'problem', 'questiontitle', 'question'].includes(n);
+            });
 
-            if (ids.length === 0) {
-              throw new Error("No valid IDs found in the CSV");
+            const diffCol = headers.find(h => {
+              const n = normalize(h);
+              return ['difficulty', 'level', 'diff'].includes(n);
+            });
+
+            const patternCol = headers.find(h => {
+              const n = normalize(h);
+              return ['pattern', 'primarytopic', 'topic', 'topics', 'tag', 'tags', 'category'].includes(n);
+            });
+
+            const slugCol = headers.find(h => {
+              const n = normalize(h);
+              return ['slug', 'titleslug', 'url', 'leetcodeurl', 'link'].includes(n);
+            });
+
+            const parsedItems: CsvProblemInput[] = [];
+
+            for (const row of rawData) {
+              const rawId = row[idCol]?.replace(/[^0-9]/g, '').trim();
+              const leetcodeId = parseInt(rawId || '', 10);
+              if (isNaN(leetcodeId) || leetcodeId <= 0) continue;
+
+              let titleSlug: string | undefined = undefined;
+              if (slugCol && row[slugCol]) {
+                const slugMatch = row[slugCol].match(/\/problems\/([^/?#]+)/);
+                if (slugMatch) {
+                  titleSlug = slugMatch[1];
+                } else if (!row[slugCol].includes('/')) {
+                  titleSlug = row[slugCol].trim();
+                }
+              }
+
+              let difficulty = diffCol ? row[diffCol]?.trim() : undefined;
+              if (difficulty) {
+                const lower = difficulty.toLowerCase();
+                if (lower.includes('easy')) difficulty = 'Easy';
+                else if (lower.includes('hard')) difficulty = 'Hard';
+                else if (lower.includes('med')) difficulty = 'Medium';
+              }
+
+              parsedItems.push({
+                leetcodeId,
+                title: titleCol ? row[titleCol]?.trim() : undefined,
+                titleSlug,
+                difficulty,
+                pattern: patternCol ? row[patternCol]?.trim() : undefined,
+              });
             }
 
-            setMessage(`Importing ${ids.length} problems in batches...`);
+            if (parsedItems.length === 0) {
+              throw new Error("No valid problems with numeric IDs were found in the uploaded file.");
+            }
+
+            const hasDetails = parsedItems.some(p => p.title);
+            setMessage(`Found ${parsedItems.length} problem(s) in CSV (${hasDetails ? 'with details' : 'IDs only'}). Importing in batches...`);
             
             // Process in chunks of 50
             const chunkSize = 50;
             let totalAdded = 0;
             
-            for (let i = 0; i < ids.length; i += chunkSize) {
-              const chunk = ids.slice(i, i + chunkSize);
-              setMessage(`Importing batch ${Math.floor(i/chunkSize) + 1} of ${Math.ceil(ids.length/chunkSize)}...`);
+            for (let i = 0; i < parsedItems.length; i += chunkSize) {
+              const chunk = parsedItems.slice(i, i + chunkSize);
+              setMessage(`Importing batch ${Math.floor(i/chunkSize) + 1} of ${Math.ceil(parsedItems.length/chunkSize)} (${chunk.length} items)...`);
               
               const res = await importCsvBatchAction(userId, chunk, calibration);
               if (res.error) {
                 console.error("Batch error:", res.error);
-              } else if (res.added) {
+              } else if (res.added !== undefined) {
                 totalAdded += res.added;
               }
             }
 
-            setMessage(`Import complete. Successfully added ${totalAdded} problems.`);
+            setMessage(`Import complete! Added ${totalAdded} new problem(s) to your review queue.`);
           } catch (err: any) {
             setMessage(`Import error: ${err.message}`);
           } finally {
@@ -242,13 +329,105 @@ export default function SyncLeetcodeSection({
 
         {/* CSV Import */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Upload className="w-5 h-5 text-muted-foreground" />
-            <h3 className="font-semibold text-sm">Bulk Import</h3>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <Upload className="w-5 h-5 text-muted-foreground" />
+              <h3 className="font-semibold text-sm">Bulk Import (CSV)</h3>
+            </div>
+            <button
+              type="button"
+              onClick={downloadSampleCsv}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary/80 hover:bg-secondary text-[11px] font-semibold text-secondary-foreground border border-border/50 transition-colors cursor-pointer"
+              title="Download pre-formatted sample CSV"
+            >
+              <Download className="w-3 h-3 text-primary" />
+              <span>Sample CSV</span>
+            </button>
           </div>
           
           <div className="space-y-3">
-            <label className="block text-xs font-medium text-muted-foreground">Upload CSV</label>
+            {/* Expected Format Helper Widget */}
+            <div className="rounded-xl border border-border/60 bg-secondary/20 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Expected Columns</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowFormatGuide(!showFormatGuide)}
+                  className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>{showFormatGuide ? 'Hide details' : 'View format'}</span>
+                  <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showFormatGuide ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+
+              {/* Column tags */}
+              <div className="flex flex-wrap gap-1.5 text-[10px]">
+                <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-semibold border border-emerald-500/20">
+                  Problem ID <strong className="text-red-500 text-[9px] uppercase">*Required</strong>
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-background/80 text-muted-foreground font-mono border border-border/50">
+                  Problem Name <span className="text-[9px] opacity-70">(Optional)</span>
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-background/80 text-muted-foreground font-mono border border-border/50">
+                  Difficulty <span className="text-[9px] opacity-70">(Optional)</span>
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-background/80 text-muted-foreground font-mono border border-border/50">
+                  Pattern <span className="text-[9px] opacity-70">(Optional)</span>
+                </span>
+              </div>
+
+              {/* Collapsible Format Table */}
+              {showFormatGuide && (
+                <div className="pt-2 border-t border-border/40 space-y-2 text-xs animate-in fade-in duration-150">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    First row must contain column headers (case-insensitive):
+                  </p>
+
+                  <div className="overflow-x-auto rounded-lg border border-border/50 text-[11px]">
+                    <table className="w-full text-left">
+                      <thead className="bg-secondary/50 text-foreground font-semibold border-b border-border/50">
+                        <tr>
+                          <th className="p-1.5">Column</th>
+                          <th className="p-1.5">Accepted Headers</th>
+                          <th className="p-1.5">Example</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40 text-muted-foreground text-[10px]">
+                        <tr>
+                          <td className="p-1.5 font-semibold text-foreground">ID <span className="text-red-500">*</span></td>
+                          <td className="p-1.5 font-mono">Problem ID, id, questionId, #</td>
+                          <td className="p-1.5 font-mono text-emerald-500 font-bold">1</td>
+                        </tr>
+                        <tr>
+                          <td className="p-1.5 font-semibold text-foreground">Name</td>
+                          <td className="p-1.5 font-mono">Problem Name, Title, Name</td>
+                          <td className="p-1.5 text-foreground">Two Sum</td>
+                        </tr>
+                        <tr>
+                          <td className="p-1.5 font-semibold text-foreground">Difficulty</td>
+                          <td className="p-1.5 font-mono">Difficulty, Level</td>
+                          <td className="p-1.5">Easy, Medium, Hard</td>
+                        </tr>
+                        <tr>
+                          <td className="p-1.5 font-semibold text-foreground">Pattern</td>
+                          <td className="p-1.5 font-mono">Pattern, Primary Topic, Topic, Tags</td>
+                          <td className="p-1.5">Array, Hash Table</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                    💡 If <code>Title</code> & <code>Difficulty</code> are provided, your CSV imports in under 1 second without waiting for LeetCode API lookups!
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Upload dropzone */}
             <div className="relative">
               <input
                 type="file"
@@ -258,16 +437,14 @@ export default function SyncLeetcodeSection({
                 disabled={isImporting}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
               />
-              <div className="flex items-center justify-center w-full h-28 border-2 border-dashed border-border rounded-xl bg-background/30 hover:bg-background/50 transition-colors group">
-                <div className="flex flex-col items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
-                  <Upload className="w-6 h-6" />
-                  <span className="text-sm font-medium">{isImporting ? 'Importing...' : 'Click or drag CSV file'}</span>
+              <div className="flex items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-xl bg-background/30 hover:bg-background/50 hover:border-primary/50 transition-all group">
+                <div className="flex flex-col items-center gap-1.5 text-muted-foreground group-hover:text-foreground transition-colors">
+                  <Upload className="w-5 h-5 group-hover:scale-110 transition-transform text-primary" />
+                  <span className="text-xs font-semibold">{isImporting ? 'Importing...' : 'Click or drag your CSV file here'}</span>
+                  <span className="text-[10px] text-muted-foreground">Supported format: .csv</span>
                 </div>
               </div>
             </div>
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Upload a CSV containing an <code>id</code> or <code>questionId</code> column to bulk import problems.
-            </p>
           </div>
         </div>
 

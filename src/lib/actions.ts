@@ -173,28 +173,125 @@ export async function submitReviewAction(
   }
 }
 
+export interface CsvProblemInput {
+  leetcodeId: number;
+  title?: string;
+  titleSlug?: string;
+  difficulty?: string;
+  pattern?: string;
+}
+
 export async function importCsvBatchAction(
   userId: string, 
-  problemIds: number[],
+  items: (number | CsvProblemInput)[],
   calibration: 'confident' | 'need_practice' = 'need_practice'
 ) {
   try {
-    if (!problemIds || problemIds.length === 0) {
+    if (!items || items.length === 0) {
       return { success: true, added: 0 };
     }
 
+    // Determine initial FSRS values based on calibration
+    const now = new Date();
+    let initialFSRS = {
+      state: 0,
+      stability: 0,
+      difficultyWeight: 0,
+      elapsedDays: 0,
+      scheduledDays: 0,
+      reps: 0,
+      lapses: 0,
+      learningSteps: 0,
+      lastReview: null as Date | null,
+      due: now,
+      nextReview: now,
+    };
+
+    if (calibration === 'confident') {
+      const empty = createEmptyCard();
+      const fsrsRes = scheduler.next(empty, now, Rating.Easy);
+      const c = fsrsRes.card;
+      initialFSRS = {
+        state: c.state,
+        stability: c.stability,
+        difficultyWeight: c.difficulty,
+        elapsedDays: c.elapsed_days,
+        scheduledDays: c.scheduled_days,
+        reps: c.reps,
+        lapses: c.lapses,
+        learningSteps: c.learning_steps,
+        lastReview: c.last_review || now,
+        due: c.due,
+        nextReview: c.due,
+      };
+    }
+
+    const itemsWithDetails: Array<{
+      userId: string;
+      leetcodeId: number;
+      title: string;
+      titleSlug: string;
+      difficulty: string;
+      pattern: string;
+      status: string;
+      state: number;
+      stability: number;
+      difficultyWeight: number;
+      elapsedDays: number;
+      scheduledDays: number;
+      reps: number;
+      lapses: number;
+      learningSteps: number;
+      lastReview: Date | null;
+      due: Date;
+      nextReview: Date;
+    }> = [];
+
+    const itemsNeedingLookup: number[] = [];
+
+    for (const item of items) {
+      const id = typeof item === 'number' ? item : item.leetcodeId;
+      if (isNaN(id) || id <= 0) continue;
+
+      if (typeof item !== 'number' && item.title && item.title.trim().length > 0) {
+        const titleSlug = item.titleSlug || item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        itemsWithDetails.push({
+          userId,
+          leetcodeId: id,
+          title: item.title.trim(),
+          titleSlug,
+          difficulty: item.difficulty || 'Medium',
+          pattern: item.pattern || 'General',
+          status: 'ACTIVE',
+          ...initialFSRS,
+        });
+      } else {
+        itemsNeedingLookup.push(id);
+      }
+    }
+
     let addedCount = 0;
-    for (const frontendId of problemIds) {
-      if (isNaN(frontendId) || frontendId <= 0) continue;
-      
+
+    // Fast-path: Direct batch insert for items that have full details in the CSV
+    if (itemsWithDetails.length > 0) {
+      const batchResult = await prisma.problem.createMany({
+        data: itemsWithDetails,
+        skipDuplicates: true,
+      });
+      addedCount += batchResult.count;
+    }
+
+    // Fallback: Fetch missing metadata from LeetCode for ID-only rows
+    for (const frontendId of itemsNeedingLookup) {
       const res = await addProblemAction(userId, frontendId, calibration);
       if (res.success) addedCount++;
     }
-    
+
     revalidatePath('/');
     revalidatePath('/problems');
     return { success: true, added: addedCount, message: `Successfully imported ${addedCount} problems.` };
   } catch (error: any) {
+    console.error("CSV import error:", error);
     return { error: error.message || 'Failed to process CSV batch.' };
   }
 }

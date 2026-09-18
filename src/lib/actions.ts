@@ -4,10 +4,14 @@ import { prisma } from './prisma';
 import { scheduler } from './fsrs';
 import { getProblemByFrontendId, getProblemByTitleSlug, getRecentSubmissions } from './leetcode';
 import { revalidatePath } from 'next/cache';
-import { Card, Rating, Grade } from 'ts-fsrs';
+import { Card, Rating, Grade, createEmptyCard } from 'ts-fsrs';
 import { LeetCode } from 'leetcode-query';
 
-export async function addProblemAction(userId: string, frontendId: number) {
+export async function addProblemAction(
+  userId: string, 
+  frontendId: number,
+  calibration: 'confident' | 'need_practice' = 'need_practice'
+) {
   try {
     // 1. Check if problem already exists
     const existing = await prisma.problem.findUnique({
@@ -29,7 +33,42 @@ export async function addProblemAction(userId: string, frontendId: number) {
     // 3. Extract patterns (topic tags)
     const patterns = leetcodeData.topicTags.map((tag: any) => tag.name).join(', ');
 
-    // 4. Create Prisma record with empty FSRS state
+    // 4. Determine initial FSRS state based on calibration
+    const now = new Date();
+    let initialFSRS = {
+      state: 0,
+      stability: 0,
+      difficultyWeight: 0,
+      elapsedDays: 0,
+      scheduledDays: 0,
+      reps: 0,
+      lapses: 0,
+      learningSteps: 0,
+      lastReview: null as Date | null,
+      due: now,
+      nextReview: now,
+    };
+
+    if (calibration === 'confident') {
+      const empty = createEmptyCard();
+      const fsrsRes = scheduler.next(empty, now, Rating.Easy);
+      const c = fsrsRes.card;
+      initialFSRS = {
+        state: c.state,
+        stability: c.stability,
+        difficultyWeight: c.difficulty,
+        elapsedDays: c.elapsed_days,
+        scheduledDays: c.scheduled_days,
+        reps: c.reps,
+        lapses: c.lapses,
+        learningSteps: c.learning_steps,
+        lastReview: c.last_review || now,
+        due: c.due,
+        nextReview: c.due,
+      };
+    }
+
+    // 5. Create Prisma record
     await prisma.problem.create({
       data: {
         userId,
@@ -38,16 +77,8 @@ export async function addProblemAction(userId: string, frontendId: number) {
         titleSlug: leetcodeData.titleSlug,
         difficulty: leetcodeData.difficulty,
         pattern: patterns,
-        // Default FSRS values
-        state: 0,
-        stability: 0,
-        difficultyWeight: 0,
-        elapsedDays: 0,
-        scheduledDays: 0,
-        reps: 0,
-        lapses: 0,
-        learningSteps: 0,
-        nextReview: new Date(), // Due immediately
+        status: 'ACTIVE',
+        ...initialFSRS,
       }
     });
 
@@ -112,6 +143,8 @@ export async function submitReviewAction(
         learningSteps: nextCard.learning_steps,
         lastReview: nextCard.last_review,
         nextReview: nextCard.due,
+        due: nextCard.due,
+        status: 'ACTIVE',
       }
     });
 
@@ -140,7 +173,11 @@ export async function submitReviewAction(
   }
 }
 
-export async function importCsvBatchAction(userId: string, problemIds: number[]) {
+export async function importCsvBatchAction(
+  userId: string, 
+  problemIds: number[],
+  calibration: 'confident' | 'need_practice' = 'need_practice'
+) {
   try {
     if (!problemIds || problemIds.length === 0) {
       return { success: true, added: 0 };
@@ -150,7 +187,7 @@ export async function importCsvBatchAction(userId: string, problemIds: number[])
     for (const frontendId of problemIds) {
       if (isNaN(frontendId) || frontendId <= 0) continue;
       
-      const res = await addProblemAction(userId, frontendId);
+      const res = await addProblemAction(userId, frontendId, calibration);
       if (res.success) addedCount++;
     }
     
@@ -181,7 +218,11 @@ export async function setLeetcodeUsername(userId: string, username: string) {
 const syncCooldownMap = new Map<string, number>();
 const syncLockSet = new Set<string>();
 
-export async function syncLeetcodeProfile(userId: string, isManual: boolean = false) {
+export async function syncLeetcodeProfile(
+  userId: string, 
+  isManual: boolean = false,
+  calibration: 'confident' | 'need_practice' = 'need_practice'
+) {
   // Safeguard 1: Prevent concurrent syncs for the same user
   if (syncLockSet.has(userId)) {
     return { success: true, message: 'Sync already in progress...' };
@@ -222,7 +263,6 @@ export async function syncLeetcodeProfile(userId: string, isManual: boolean = fa
     }
 
     // Safeguard 3: Pre-filter existing problems in 1 database query
-    // instead of querying LeetCode GraphQL 20 times for already tracked problems!
     const existingProblems = await prisma.problem.findMany({
       where: {
         userId,
@@ -242,8 +282,41 @@ export async function syncLeetcodeProfile(userId: string, isManual: boolean = fa
       
       const patterns = leetcodeData.topicTags?.map((tag: any) => tag.name).join(', ') || 'Unknown';
       const submissionDate = new Date(parseInt(sub.timestamp, 10) * 1000);
-      const nextReview = new Date(submissionDate.getTime() + 24 * 60 * 60 * 1000);
+      const standardNextReview = new Date(submissionDate.getTime() + 24 * 60 * 60 * 1000);
       
+      let initialFSRS = {
+        state: 0,
+        stability: 0,
+        difficultyWeight: 0,
+        elapsedDays: 0,
+        scheduledDays: 0,
+        reps: 0,
+        lapses: 0,
+        learningSteps: 0,
+        lastReview: submissionDate,
+        due: standardNextReview,
+        nextReview: standardNextReview,
+      };
+
+      if (calibration === 'confident') {
+        const empty = createEmptyCard();
+        const fsrsRes = scheduler.next(empty, submissionDate, Rating.Easy);
+        const c = fsrsRes.card;
+        initialFSRS = {
+          state: c.state,
+          stability: c.stability,
+          difficultyWeight: c.difficulty,
+          elapsedDays: c.elapsed_days,
+          scheduledDays: c.scheduled_days,
+          reps: c.reps,
+          lapses: c.lapses,
+          learningSteps: c.learning_steps,
+          lastReview: c.last_review || submissionDate,
+          due: c.due,
+          nextReview: c.due,
+        };
+      }
+
       await prisma.problem.create({
         data: {
           userId,
@@ -252,16 +325,8 @@ export async function syncLeetcodeProfile(userId: string, isManual: boolean = fa
           titleSlug: leetcodeData.titleSlug,
           difficulty: leetcodeData.difficulty || 'Medium',
           pattern: patterns,
-          state: 0,
-          stability: 0,
-          difficultyWeight: 0,
-          elapsedDays: 0,
-          scheduledDays: 0,
-          reps: 0,
-          lapses: 0,
-          learningSteps: 0,
-          lastReview: submissionDate,
-          nextReview: nextReview,
+          status: 'ACTIVE',
+          ...initialFSRS,
         }
       });
       

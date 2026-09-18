@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 import { revalidatePath } from 'next/cache';
+import { scheduler } from '@/lib/fsrs';
+import { createEmptyCard, Rating } from 'ts-fsrs';
 
 // Handle CORS for preflight requests from leetcode.com
 export async function OPTIONS() {
@@ -48,20 +50,15 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const problems = body.problems;
+    const calibration = body.calibration === 'confident' ? 'confident' : 'need_practice';
 
     if (!Array.isArray(problems)) {
       return NextResponse.json({ error: 'Invalid payload format. Expected problems array.' }, { status: 400, headers });
     }
 
-    // Map the incoming payload to match the Prisma schema
-    const dataToInsert = problems.map((p: any) => ({
-      userId,
-      leetcodeId: parseInt(p.questionId, 10), // CRITICAL: Parse to integer
-      title: p.title,
-      titleSlug: p.titleSlug,
-      difficulty: 'Unknown', // We don't get difficulty from the basic list, fallback to Unknown
-      pattern: 'Unknown',    // Default pattern
-      // FSRS Core State Defaults
+    // Determine initial FSRS values
+    const now = new Date();
+    let initialFSRS = {
       state: 0,
       stability: 0,
       difficultyWeight: 0,
@@ -70,6 +67,40 @@ export async function POST(req: Request) {
       reps: 0,
       lapses: 0,
       learningSteps: 0,
+      lastReview: null as Date | null,
+      due: now,
+      nextReview: now,
+    };
+
+    if (calibration === 'confident') {
+      const empty = createEmptyCard();
+      const fsrsRes = scheduler.next(empty, now, Rating.Easy);
+      const c = fsrsRes.card;
+      initialFSRS = {
+        state: c.state,
+        stability: c.stability,
+        difficultyWeight: c.difficulty,
+        elapsedDays: c.elapsed_days,
+        scheduledDays: c.scheduled_days,
+        reps: c.reps,
+        lapses: c.lapses,
+        learningSteps: c.learning_steps,
+        lastReview: c.last_review || now,
+        due: c.due,
+        nextReview: c.due,
+      };
+    }
+
+    // Map the incoming payload to match the Prisma schema
+    const dataToInsert = problems.map((p: any) => ({
+      userId,
+      leetcodeId: parseInt(p.questionId, 10), // CRITICAL: Parse to integer
+      title: p.title,
+      titleSlug: p.titleSlug,
+      difficulty: p.difficulty || 'Unknown',
+      pattern: p.pattern || 'Unknown',
+      status: 'ACTIVE',
+      ...initialFSRS,
     })).filter((p: any) => !isNaN(p.leetcodeId)); // Filter out any that failed to parse
 
     // Execute synchronous batch insert using createMany with skipDuplicates

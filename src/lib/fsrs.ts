@@ -10,3 +10,13 @@ const params = generatorParameters({
 });
 
 export const scheduler: FSRS = fsrs(params);
+
+/**
+ * Calculates retrievability R(t) based on the FSRS forgetting curve.
+ * R(t) = exp(ln(0.9) * (t / S))
+ */
+export function calculateRetrievability(stability: number, elapsedDays: number): number {
+  if (stability <= 0 || elapsedDays <= 0) return 0;
+  const R = Math.exp(Math.log(0.9) * (elapsedDays / stability)) * 100;
+  return Math.min(100, Math.max(0, R));
+}

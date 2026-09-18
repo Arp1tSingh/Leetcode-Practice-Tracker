@@ -9,15 +9,16 @@ datasource db {
 }
 
 model User {
-  id             String    @id @default(uuid())
-  username       String    @unique
-  email          String?   // Optional email for password recovery
-  name           String?
-  password       String?   // Added for simple Credentials auth
-  leetcodeUsername String? // Added for LeetCode syncing
-  problems       Problem[]
-  reviews        Review[]
-  createdAt      DateTime  @default(now())
+  id               String    @id @default(uuid())
+  username         String    @unique
+  email            String?   // Optional email for password recovery
+  name             String?
+  password         String?   // Added for simple Credentials auth
+  leetcodeUsername String?   // Added for LeetCode syncing
+  dailyReviewLimit Int       @default(6) // Paced daily review cap
+  problems         Problem[]
+  reviews          Review[]
+  createdAt        DateTime  @default(now())
 }
 
 model Problem {
@@ -28,6 +29,7 @@ model Problem {
   titleSlug        String
   difficulty       String
   pattern          String    // e.g., Array, Two Pointers
+  status           String    @default("ACTIVE") // ACTIVE, DORMANT, SUSPENDED
   
   // FSRS Core State
   state            Int       @default(0) // 0=New, 1=Learning, 2=Review, 3=Relearning
@@ -41,6 +43,7 @@ model Problem {
   
   lastReview       DateTime?
   nextReview       DateTime?
+  due              DateTime? @default(now())
   
   user             User      @relation(fields: [userId], references: [id])
   reviews          Review[]

@@ -35,7 +35,7 @@ export default async function ProblemsTableFetcher({ userId }: { userId: string 
       scratchPercentage,
       hintPercentage,
       avgTimeStr: avgTime > 0 ? `${avgTime}m` : '-',
-      nextReviewStr: p.nextReview ? p.nextReview.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Now',
+      nextReviewStr: (p.due || p.nextReview) ? (p.due || p.nextReview)!.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Now',
       stabilityStr: `${p.stability.toFixed(1)} (${p.difficultyWeight.toFixed(1)})`,
       scheduledDays: p.scheduledDays
     };

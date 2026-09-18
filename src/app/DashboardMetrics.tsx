@@ -29,14 +29,25 @@ export async function DashboardMetrics({ userId }: { userId: string }) {
     avgRetrievability = (sumR / allActiveProblems.length) * 100;
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { dailyReviewLimit: true }
+  });
+  const dailyLimit = user?.dailyReviewLimit && user.dailyReviewLimit > 0 ? user.dailyReviewLimit : 6;
+
   const dueTodayCount = await prisma.problem.count({
     where: {
       userId,
-      nextReview: {
-        lte: now,
-      },
+      status: 'ACTIVE',
+      OR: [
+        { due: { lte: now } },
+        { nextReview: { lte: now } },
+      ],
     },
   });
+
+  const activeTodayDisplay = Math.min(dailyLimit, dueTodayCount);
+  const restingBacklog = Math.max(0, dueTodayCount - activeTodayDisplay);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -81,7 +92,12 @@ export async function DashboardMetrics({ userId }: { userId: string }) {
           </div>
         </div>
         <div className="flex items-baseline gap-2">
-          <p className="text-3xl font-bold tracking-tight text-rose-600 dark:text-rose-400">{dueTodayCount}</p>
+          <p className="text-3xl font-bold tracking-tight text-rose-600 dark:text-rose-400">{activeTodayDisplay}</p>
+          {restingBacklog > 0 && (
+            <span className="text-xs text-muted-foreground font-medium">
+              (+{restingBacklog} in backlog)
+            </span>
+          )}
         </div>
       </div>
     </div>

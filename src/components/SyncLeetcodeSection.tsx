@@ -5,7 +5,17 @@ import { setLeetcodeUsername, syncLeetcodeProfile, importCsvBatchAction } from '
 import { RefreshCw, Upload, Save, UserCircle } from 'lucide-react';
 import BookmarkletCard from '@/components/BookmarkletCard';
 
-export default function SyncLeetcodeSection({ userId, initialUsername }: { userId: string, initialUsername: string | null }) {
+export default function SyncLeetcodeSection({ 
+  userId, 
+  initialUsername,
+  embedded = false,
+  onUsernameSaved,
+}: { 
+  userId: string; 
+  initialUsername: string | null;
+  embedded?: boolean;
+  onUsernameSaved?: (newUsername: string) => void;
+}) {
   const [username, setUsername] = useState(initialUsername || '');
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -42,6 +52,7 @@ export default function SyncLeetcodeSection({ userId, initialUsername }: { userI
       setMessage(`Error: ${res.error}`);
     } else {
       setMessage('Username saved!');
+      onUsernameSaved?.(username);
     }
     setIsSaving(false);
   };
@@ -140,10 +151,17 @@ export default function SyncLeetcodeSection({ userId, initialUsername }: { userI
   };
 
   return (
-    <div className="glass p-4 sm:p-6 rounded-2xl">
-      <h2 className="text-xl font-bold tracking-tight mb-6">Integrations</h2>
+    <div className={embedded ? "space-y-6" : "glass p-4 sm:p-6 rounded-2xl"}>
+      {!embedded && (
+        <div className="mb-6">
+          <h2 className="text-xl font-bold tracking-tight">Connect LeetCode Integrations</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Add your LeetCode username to automatically sync your solved submissions into your review loop, or bulk import problem history.
+          </p>
+        </div>
+      )}
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className={embedded ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "grid grid-cols-1 lg:grid-cols-3 gap-8"}>
         {/* Username Sync */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-2">

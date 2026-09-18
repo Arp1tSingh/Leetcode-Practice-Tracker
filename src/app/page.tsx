@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import SyncLeetcodeSection from "@/components/SyncLeetcodeSection";
+import { AutoSyncHandler } from "@/components/AutoSyncHandler";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardMetrics } from "./DashboardMetrics";
@@ -38,7 +39,11 @@ export default async function Dashboard() {
           <DashboardMetrics userId={userId} />
         </Suspense>
 
-        <SyncLeetcodeSection userId={userId} initialUsername={user?.leetcodeUsername || null} />
+        {!user?.leetcodeUsername ? (
+          <SyncLeetcodeSection userId={userId} initialUsername={null} />
+        ) : (
+          <AutoSyncHandler userId={userId} leetcodeUsername={user.leetcodeUsername} />
+        )}
 
         <div className="glass p-4 sm:p-6 rounded-2xl overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">

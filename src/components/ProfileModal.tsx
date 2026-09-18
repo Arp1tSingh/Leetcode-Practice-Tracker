@@ -1,0 +1,155 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { X, User, ExternalLink, LogOut, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import SyncLeetcodeSection from './SyncLeetcodeSection';
+
+export interface ProfileUser {
+  id: string;
+  name?: string | null;
+  username?: string | null;
+  email?: string | null;
+  leetcodeUsername?: string | null;
+}
+
+export function ProfileModal({
+  isOpen,
+  onClose,
+  user,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  user: ProfileUser;
+}) {
+  const [currentLcUsername, setCurrentLcUsername] = useState(user.leetcodeUsername || null);
+
+  useEffect(() => {
+    setCurrentLcUsername(user.leetcodeUsername || null);
+  }, [user.leetcodeUsername]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const displayName = user.name || user.username || 'Developer';
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="profile-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col glass rounded-3xl border border-border/70 shadow-2xl overflow-hidden bg-card text-foreground animate-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-border/50 bg-secondary/20">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-lg shadow-sm">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 id="profile-modal-title" className="text-xl font-bold tracking-tight">
+                  {displayName}
+                </h2>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                  <ShieldCheck className="w-3 h-3" />
+                  Account
+                </span>
+              </div>
+              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                {user.email && <span>{user.email}</span>}
+                {user.email && <span className="opacity-40">•</span>}
+                {currentLcUsername ? (
+                  <a
+                    href={`https://leetcode.com/u/${currentLcUsername}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    LeetCode: @{currentLcUsername}
+                    <ExternalLink className="w-3 h-3 opacity-70" />
+                  </a>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    LeetCode not connected
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            aria-label="Close profile modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6">
+          <div className="space-y-2">
+            <h3 className="text-base font-semibold tracking-tight text-foreground">
+              Integrations & Synchronization
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Configure your LeetCode username for automated background sync on visit, bulk import past problem solutions from CSV, or use the one-click bookmarklet sync tool.
+            </p>
+          </div>
+
+          <SyncLeetcodeSection
+            userId={user.id}
+            initialUsername={currentLcUsername}
+            embedded={true}
+            onUsernameSaved={(newUsername) => setCurrentLcUsername(newUsername)}
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between p-4 sm:p-5 border-t border-border/50 bg-secondary/20">
+          <p className="text-xs text-muted-foreground hidden sm:block">
+            LeetCode FSRS • Spaced Repetition Engine
+          </p>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2.5 rounded-xl border border-border/60 text-sm font-medium hover:bg-secondary/60 transition-colors"
+            >
+              Close
+            </button>
+            <Link
+              href="/signout"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 text-sm font-semibold transition-all shadow-sm active:scale-[0.98]"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

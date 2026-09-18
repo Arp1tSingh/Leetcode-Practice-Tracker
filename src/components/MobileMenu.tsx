@@ -3,8 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import { ProfileUser } from "./ProfileModal";
+import { UserProfileButton } from "./UserProfileButton";
 
-export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
+export function MobileMenu({ 
+  isLoggedIn,
+  user,
+}: { 
+  isLoggedIn: boolean;
+  user?: ProfileUser | null;
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   if (!isLoggedIn) return null;
@@ -20,35 +28,44 @@ export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
       </button>
 
       {isOpen && (
-        <div className="absolute top-16 left-0 right-0 bg-background/95 border-b border-border/40 p-4 flex flex-col gap-4 shadow-lg animate-in slide-in-from-top-2">
+        <div className="absolute top-16 left-0 right-0 bg-background/95 border-b border-border/40 p-4 flex flex-col gap-3 shadow-xl backdrop-blur-md animate-in slide-in-from-top-2 z-50">
           <Link 
             href="/" 
-            className="text-sm font-medium p-2 rounded-md hover:bg-muted transition-colors"
+            className="text-sm font-medium p-2 rounded-xl hover:bg-secondary/60 transition-colors"
             onClick={() => setIsOpen(false)}
           >
             Dashboard
           </Link>
           <Link 
             href="/problems" 
-            className="text-sm font-medium p-2 rounded-md hover:bg-muted transition-colors"
+            className="text-sm font-medium p-2 rounded-xl hover:bg-secondary/60 transition-colors"
             onClick={() => setIsOpen(false)}
           >
             Problems
           </Link>
           <Link 
             href="/reviews" 
-            className="text-sm font-medium p-2 rounded-md hover:bg-muted transition-colors"
+            className="text-sm font-medium p-2 rounded-xl hover:bg-secondary/60 transition-colors"
             onClick={() => setIsOpen(false)}
           >
             Reviews
           </Link>
           <Link 
             href="/patterns" 
-            className="text-sm font-medium p-2 rounded-md hover:bg-muted transition-colors"
+            className="text-sm font-medium p-2 rounded-xl hover:bg-secondary/60 transition-colors"
             onClick={() => setIsOpen(false)}
           >
             Pattern Mastery
           </Link>
+
+          {user && (
+            <div className="pt-2 border-t border-border/50">
+              <UserProfileButton 
+                user={user} 
+                mobile={true} 
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

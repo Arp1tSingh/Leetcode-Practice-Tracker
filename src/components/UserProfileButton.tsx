@@ -12,10 +12,12 @@ import {
   CheckCircle2, 
   AlertCircle,
   ShieldCheck,
-  Inbox
+  Inbox,
+  Trash2
 } from 'lucide-react';
 import { ProfileModal, ProfileUser } from './ProfileModal';
 import { ContactModal } from './ContactModal';
+import { DeleteAccountModal } from './DeleteAccountModal';
 
 export function UserProfileButton({
   user,
@@ -29,6 +31,7 @@ export function UserProfileButton({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const displayName = user.name || user.username || 'Developer';
@@ -128,6 +131,18 @@ export function UserProfileButton({
               </Link>
             )}
 
+            <button
+              type="button"
+              onClick={() => {
+                setIsDropdownOpen(false);
+                setIsDeleteModalOpen(true);
+              }}
+              className="flex items-center gap-2.5 w-full p-2.5 rounded-xl hover:bg-destructive/10 text-xs font-semibold text-destructive transition-colors text-left cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete Account</span>
+            </button>
+
             <Link
               href="/signout"
               className="flex items-center gap-2.5 w-full p-2.5 rounded-xl hover:bg-destructive/10 text-xs font-semibold text-destructive transition-colors text-left"
@@ -150,6 +165,12 @@ export function UserProfileButton({
           userName={displayName}
           userEmail={user.email}
           leetcodeUsername={user.leetcodeUsername}
+        />
+
+        <DeleteAccountModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          userId={user.id}
         />
       </div>
     );
@@ -302,6 +323,26 @@ export function UserProfileButton({
                 </div>
               </Link>
             )}
+
+            {/* 4. Delete Account */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsDropdownOpen(false);
+                setIsDeleteModalOpen(true);
+              }}
+              className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-destructive/10 text-left transition-colors group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive group-hover:scale-105 transition-transform">
+                <Trash2 className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-destructive">Delete Account</p>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  Permanently wipe account & data
+                </p>
+              </div>
+            </button>
           </div>
 
           {/* Footer & Sign Out */}
@@ -340,6 +381,13 @@ export function UserProfileButton({
         userName={displayName}
         userEmail={user.email}
         leetcodeUsername={user.leetcodeUsername}
+      />
+
+      {/* Delete Account Dialog */}
+      <DeleteAccountModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        userId={user.id}
       />
     </div>
   );

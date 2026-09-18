@@ -276,7 +276,7 @@ export function LandingPage() {
               </p>
               <div className="footer-contact">
                 <span>Support: </span>
-                <a href="mailto:support@leetcodefsrs.com" className="text-link">support@leetcodefsrs.com</a>
+                <a href="mailto:arpitsingh8534@gmail.com" className="text-link">arpitsingh8534@gmail.com</a>
               </div>
             </div>
 

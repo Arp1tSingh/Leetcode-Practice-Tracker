@@ -71,3 +71,15 @@ model Review {
   problem             Problem  @relation(fields: [problemId], references: [id])
   user                User     @relation(fields: [userId], references: [id])
 }
+
+model ContactMessage {
+  id        String   @id @default(uuid())
+  userId    String?
+  name      String?
+  email     String?
+  category  String   @default("General")
+  subject   String
+  message   String
+  ipAddress String?
+  createdAt DateTime @default(now())
+}

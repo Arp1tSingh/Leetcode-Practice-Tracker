@@ -27,7 +27,7 @@ export default async function AuthHeader() {
   } : null;
   
   return (
-    <header className="sticky top-0 z-50 w-full glass border-b border-border/40 bg-background/95 will-change-transform transform-gpu">
+    <header className="sticky top-0 z-50 w-full glass border-b border-border/40 bg-background/95">
       <div className="container mx-auto max-w-7xl h-16 px-4 flex items-center justify-between">
         <div className="flex items-center gap-4 md:gap-8">
           <MobileMenu isLoggedIn={!!session?.user} user={profileUser} />

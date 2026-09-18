@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { X, User, ExternalLink, LogOut, ShieldCheck, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
 import SyncLeetcodeSection from './SyncLeetcodeSection';
@@ -25,6 +26,11 @@ export function ProfileModal({
 }) {
   const [currentLcUsername, setCurrentLcUsername] = useState(user.leetcodeUsername || null);
   const [isContactOpen, setIsContactOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setCurrentLcUsername(user.leetcodeUsername || null);
@@ -47,21 +53,21 @@ export function ProfileModal({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const displayName = user.name || user.username || 'Developer';
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="profile-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] overflow-y-auto bg-background/80 backdrop-blur-md p-3 sm:p-6 flex justify-center items-start sm:items-center animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col glass rounded-3xl border border-border/70 shadow-2xl overflow-hidden bg-card text-foreground animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-4xl my-auto max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] flex flex-col rounded-3xl border border-border/70 shadow-2xl overflow-hidden bg-card text-foreground animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between p-5 sm:p-6 border-b border-border/50 bg-secondary/20">
           <div className="flex items-center gap-3.5">
@@ -166,6 +172,7 @@ export function ProfileModal({
         userEmail={user.email}
         leetcodeUsername={currentLcUsername}
       />
-    </div>
+    </div>,
+    document.body
   );
 }

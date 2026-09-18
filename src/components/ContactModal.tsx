@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useId } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Send, 
@@ -51,6 +52,11 @@ export function ContactModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Sync props
   useEffect(() => {
@@ -80,17 +86,25 @@ export function ContactModal({
     return () => clearInterval(interval);
   }, [isOpen]);
 
-  // Escape key handler
+  // Escape key & body scroll lock handler
   useEffect(() => {
     if (!isOpen) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,17 +176,17 @@ export function ContactModal({
 
   const mailtoLink = `mailto:arpitsingh8534@gmail.com?subject=${encodeURIComponent(`[LeetCode FSRS - ${category.toUpperCase()}] ${subject || 'Help Request'}`)}&body=${encodeURIComponent(`Hi Arpit,\n\n${message || 'I need help with...'}\n\nFrom: ${senderName || 'User'} (${senderEmail || 'No email'})\nLeetCode: ${leetcodeUsername || 'N/A'}`)}`;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="contact-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] overflow-y-auto bg-background/80 backdrop-blur-md p-3 sm:p-6 flex justify-center items-start sm:items-center animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative w-full max-w-xl max-h-[90vh] flex flex-col bg-card border border-border/80 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 text-foreground">
+      <div className="relative w-full max-w-xl my-auto max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] flex flex-col bg-card border border-border/80 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 text-foreground">
         
         {/* Modal Header */}
         <div className="flex items-center justify-between p-5 border-b border-border/60 bg-secondary/30">
@@ -415,6 +429,7 @@ export function ContactModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

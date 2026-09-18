@@ -52,15 +52,15 @@ export default function PatternsTableClient({ patterns }: { patterns: PatternPro
       <div className="glass rounded-2xl border border-border/50">
         <div className="overflow-x-auto w-full rounded-2xl">
           <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="text-muted-foreground font-medium border-b border-border/50">
+            <thead className="bg-secondary/40 text-muted-foreground font-medium border-b border-border/50">
               <tr>
-                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Pattern</th>
-                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Total Problems</th>
-                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Mastery Score</th>
-                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Weakness Level</th>
-                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Hint Rate</th>
-                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Avg Time</th>
-                <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Target Time</th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Pattern</th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Total Problems</th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Mastery Score</th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Weakness Level</th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Hint Rate</th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Avg Time</th>
+                <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Target Time</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">

@@ -25,23 +25,23 @@ export default function ProblemsTableClient({ problems }: { problems: ProblemPro
   return (
     <div className="overflow-x-auto w-full rounded-2xl">
       <table className="w-full text-sm text-left border-collapse whitespace-nowrap">
-        <thead className="text-xs uppercase text-muted-foreground border-b border-border/50">
+        <thead className="text-xs uppercase text-muted-foreground border-b border-border/50 bg-secondary/40">
           <tr>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">ID</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Problem Name</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Difficulty</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Pattern</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">First Solved</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Last Review</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">State</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Reps (Lapses)</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Scratch %</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Hint %</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Avg Time</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Next Review</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">S (D)</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Interval</th>
-            <th className="px-4 py-4 font-semibold tracking-wider sticky top-16 z-30 bg-secondary/95 backdrop-blur-md text-right">Action</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">ID</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">Problem Name</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">Difficulty</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">Pattern</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">First Solved</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">Last Review</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">State</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">Reps (Lapses)</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">Scratch %</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">Hint %</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">Avg Time</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">Next Review</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">S (D)</th>
+            <th className="px-4 py-4 font-semibold tracking-wider">Interval</th>
+            <th className="px-4 py-4 font-semibold tracking-wider text-right">Action</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border/50">

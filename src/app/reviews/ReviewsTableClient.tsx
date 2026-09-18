@@ -29,23 +29,28 @@ export default function ReviewsTableClient({ reviews }: { reviews: ReviewProp[] 
   return (
     <div className="overflow-x-auto w-full rounded-2xl">
       <table className="w-full text-sm text-left whitespace-nowrap">
-        <thead className="text-muted-foreground font-medium border-b border-border/50">
+        <thead className="bg-secondary/40 text-muted-foreground font-medium border-b border-border/50">
           <tr>
-            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Date</th>
-            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Problem</th>
-            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Rating</th>
-            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Time</th>
-            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Status</th>
-            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Pattern</th>
-            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Bugs</th>
-            <th className="px-6 py-4 sticky top-16 z-30 bg-secondary/95 backdrop-blur-md">Difficulty</th>
+            <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Date</th>
+            <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Problem</th>
+            <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Rating</th>
+            <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Time</th>
+            <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Status</th>
+            <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Pattern</th>
+            <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Bugs</th>
+            <th className="px-6 py-4 font-semibold text-xs uppercase tracking-wider">Difficulty</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border/30">
           {reviews.length === 0 && (
             <tr>
-              <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground">
-                No reviews found. Start practicing to see your history here!
+              <td colSpan={8} className="px-6 py-16 text-center text-muted-foreground">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <p className="font-semibold text-base text-foreground">No reviews found</p>
+                  <p className="text-sm text-muted-foreground">
+                    Complete your daily reviews from the dashboard to track your practice history here!
+                  </p>
+                </div>
               </td>
             </tr>
           )}

@@ -37,14 +37,21 @@ export default async function AuthHeader() {
             </div>
             <span className="font-bold text-lg hidden sm:inline-block tracking-tight">LeetCode FSRS</span>
           </Link>
-          {session?.user && (
-            <nav className="hidden md:flex gap-6 text-sm font-medium">
-              <a href="/" className="text-muted-foreground transition-colors hover:text-foreground">Dashboard</a>
-              <Link href="/problems" className="text-muted-foreground transition-colors hover:text-foreground">Problems</Link>
-              <Link href="/reviews" className="text-muted-foreground transition-colors hover:text-foreground">Reviews</Link>
-              <Link href="/patterns" className="text-muted-foreground transition-colors hover:text-foreground">Pattern Mastery</Link>
-            </nav>
-          )}
+          <nav className="hidden md:flex gap-6 text-sm font-medium">
+            {session?.user ? (
+              <>
+                <a href="/" className="text-muted-foreground transition-colors hover:text-foreground">Dashboard</a>
+                <Link href="/problems" className="text-muted-foreground transition-colors hover:text-foreground">Problems</Link>
+                <Link href="/reviews" className="text-muted-foreground transition-colors hover:text-foreground">Reviews</Link>
+                <Link href="/patterns" className="text-muted-foreground transition-colors hover:text-foreground">Pattern Mastery</Link>
+                <Link href="/how-to-use" className="text-muted-foreground transition-colors hover:text-foreground">How to Use</Link>
+              </>
+            ) : (
+              <>
+                <Link href="/how-to-use" className="text-muted-foreground transition-colors hover:text-foreground">How to Use</Link>
+              </>
+            )}
+          </nav>
         </div>
         <div className="flex items-center gap-3 md:gap-4 text-sm font-medium">
           <ThemeToggle />

@@ -57,6 +57,13 @@ export function MobileMenu({
           >
             Pattern Mastery
           </Link>
+          <Link 
+            href="/how-to-use" 
+            className="text-sm font-medium p-2 rounded-xl hover:bg-secondary/60 transition-colors"
+            onClick={() => setIsOpen(false)}
+          >
+            How to Use
+          </Link>
 
           {user && (
             <div className="pt-2 border-t border-border/50">

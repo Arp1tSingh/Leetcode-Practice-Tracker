@@ -30,7 +30,7 @@ export async function addProblemAction(
     });
 
     if (existing) {
-      return { error: 'Problem already added to your queue.' };
+      return { success: true, alreadyExists: true, problemId: existing.id, error: 'Problem already added to your queue.' };
     }
 
     // 2. Fetch LeetCode data
@@ -75,7 +75,7 @@ export async function addProblemAction(
     }
 
     // 5. Create Prisma record
-    await prisma.problem.create({
+    const createdProblem = await prisma.problem.create({
       data: {
         userId,
         leetcodeId: frontendId,
@@ -90,7 +90,7 @@ export async function addProblemAction(
 
     revalidatePath('/');
     revalidatePath('/problems');
-    return { success: true };
+    return { success: true, problemId: createdProblem.id };
   } catch (error: any) {
     return { error: error.message || 'Failed to add problem.' };
   }
@@ -637,5 +637,118 @@ export async function deleteAccountAction(userId: string) {
     return { error: error.message || 'Failed to delete account. Please try again.' };
   }
 }
+
+// ---------------------------------------------------------------------------
+// On-Demand / Custom Review & Repeat Actions
+// ---------------------------------------------------------------------------
+
+export interface CustomReviewProblemItem {
+  id: string;
+  leetcodeId: number;
+  title: string;
+  titleSlug: string;
+  difficulty: string;
+  pattern: string | null;
+  status: string;
+  due: string | null;
+  lastReview: string | null;
+  stability: number;
+  reps: number;
+  isDueToday: boolean;
+}
+
+/**
+ * Fetches all problems tracked by the user so they can search, select,
+ * and review any problem on demand, outside the daily recommended queue.
+ */
+export async function getAllUserProblemsForCustomReviewAction(userId: string): Promise<{
+  problems?: CustomReviewProblemItem[];
+  error?: string;
+}> {
+  try {
+    const session = await getServerSession(authOptions);
+    const sessionUserId = (session?.user as any)?.id;
+    if (!sessionUserId || sessionUserId !== userId) {
+      return { error: 'Unauthorized.' };
+    }
+
+    const now = new Date();
+    const rawProblems = await prisma.problem.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        leetcodeId: true,
+        title: true,
+        titleSlug: true,
+        difficulty: true,
+        pattern: true,
+        status: true,
+        due: true,
+        nextReview: true,
+        lastReview: true,
+        stability: true,
+        reps: true,
+      },
+      orderBy: { leetcodeId: 'asc' },
+    });
+
+    const problems: CustomReviewProblemItem[] = rawProblems.map((p) => {
+      const effectiveDue = p.due || p.nextReview;
+      const isDueToday = p.status === 'ACTIVE' && Boolean(effectiveDue && effectiveDue <= now);
+
+      return {
+        id: p.id,
+        leetcodeId: p.leetcodeId,
+        title: p.title,
+        titleSlug: p.titleSlug,
+        difficulty: p.difficulty,
+        pattern: p.pattern,
+        status: p.status,
+        due: effectiveDue ? effectiveDue.toISOString() : null,
+        lastReview: p.lastReview ? p.lastReview.toISOString() : null,
+        stability: p.stability,
+        reps: p.reps,
+        isDueToday,
+      };
+    });
+
+    return { problems };
+  } catch (error: any) {
+    console.error('Error fetching problems for custom review:', error);
+    return { error: error.message || 'Failed to fetch problems.' };
+  }
+}
+
+/**
+ * Adds an existing problem into today's active queue by setting its due date to NOW,
+ * so it immediately appears in Today's Recommended Queue.
+ */
+export async function addProblemToTodayQueueAction(userId: string, problemId: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    const sessionUserId = (session?.user as any)?.id;
+    if (!sessionUserId || sessionUserId !== userId) {
+      return { error: 'Unauthorized.' };
+    }
+
+    const now = new Date();
+    await prisma.problem.update({
+      where: { id: problemId, userId },
+      data: {
+        due: now,
+        nextReview: now,
+        status: 'ACTIVE',
+      },
+    });
+
+    revalidatePath('/');
+    revalidatePath('/problems');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error adding problem to today queue:', error);
+    return { error: error.message || 'Failed to add problem to today queue.' };
+  }
+}
+
 
 

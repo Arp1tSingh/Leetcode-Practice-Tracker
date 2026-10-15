@@ -14,6 +14,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { QueuedCard, fetchMoreBacklogCardsAction, updateDailyReviewLimitAction } from '@/lib/queue';
+import { CustomReviewModal } from '@/components/CustomReviewModal';
 
 export interface DashboardQueueClientProps {
   userId: string;
@@ -41,6 +42,7 @@ export function DashboardQueueClient({
   const [isPending, startTransition] = useTransition();
   const [showLimitSettings, setShowLimitSettings] = useState(false);
   const [tempLimit, setTempLimit] = useState(initialDailyLimit);
+  const [isCustomReviewOpen, setIsCustomReviewOpen] = useState(false);
 
   // Progress calculation
   const progressPercent = dailyLimit > 0 ? Math.min(100, Math.round((completedToday / dailyLimit) * 100)) : 0;
@@ -55,6 +57,19 @@ export function DashboardQueueClient({
         setTotalOverdueCount(res.totalOverdueCount);
       } catch (err) {
         console.error('Failed to load more cards:', err);
+      }
+    });
+  };
+
+  const handleQueueUpdated = () => {
+    startTransition(async () => {
+      try {
+        const res = await fetchMoreBacklogCardsAction(userId, cards.length, 0);
+        setCards(res.cards);
+        setBacklogRemaining(res.backlogRemaining);
+        setTotalOverdueCount(res.totalOverdueCount);
+      } catch (err) {
+        console.error('Failed to update queue:', err);
       }
     });
   };
@@ -99,8 +114,19 @@ export function DashboardQueueClient({
             </p>
           </div>
 
-          {/* Controls: Backlog indicator & Daily Limit Adjuster */}
+          {/* Controls: Review Other Question, Backlog indicator & Daily Limit Adjuster */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Review Other Question button */}
+            <button
+              type="button"
+              onClick={() => setIsCustomReviewOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98] shadow-xs cursor-pointer"
+              title="Practice any problem on demand, outside today's recommended queue"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Review Other Question</span>
+            </button>
+
             {/* Subtle, anxiety-free Backlog Resting Badge */}
             {backlogRemaining > 0 && (
               <div 
@@ -108,7 +134,7 @@ export function DashboardQueueClient({
                 title={`${backlogRemaining} cards are resting in your backlog and will be scheduled automatically over the coming days.`}
               >
                 <Layers className="w-3.5 h-3.5 text-primary" />
-                <span>{backlogRemaining} additional cards resting in backlog</span>
+                <span>{backlogRemaining} resting in backlog</span>
               </div>
             )}
 
@@ -118,11 +144,11 @@ export function DashboardQueueClient({
                 type="button"
                 onClick={handleReviewMore}
                 disabled={isPending}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground border border-border/60 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                 title="Voluntarily pull 3 more cards from the backlog into your active queue"
               >
                 <PlusCircle className={`w-3.5 h-3.5 ${isPending ? 'animate-spin' : ''}`} />
-                <span>Review +3 more from backlog</span>
+                <span>+3 from backlog</span>
               </button>
             )}
 
@@ -130,7 +156,7 @@ export function DashboardQueueClient({
             <button
               type="button"
               onClick={() => setShowLimitSettings(!showLimitSettings)}
-              className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/80 border border-border/50 transition-colors"
+              className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/80 border border-border/50 transition-colors cursor-pointer"
               title="Configure Daily Review Limit"
               aria-label="Configure Daily Review Limit"
             >
@@ -212,19 +238,27 @@ export function DashboardQueueClient({
             </p>
           </div>
 
-          {backlogRemaining > 0 && (
-            <div className="pt-2">
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            {backlogRemaining > 0 && (
               <button
                 type="button"
                 onClick={handleReviewMore}
                 disabled={isPending}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-md hover:bg-primary/90 transition-all active:scale-[0.98]"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-md hover:bg-primary/90 transition-all active:scale-[0.98] cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4" />
                 Review +3 more from backlog ({backlogRemaining} resting)
               </button>
-            </div>
-          )}
+            )}
+            <button
+              type="button"
+              onClick={() => setIsCustomReviewOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-bold border border-border/60 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span>Practice Other Questions</span>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
@@ -331,6 +365,13 @@ export function DashboardQueueClient({
         </div>
       )}
 
+      {/* Custom On-Demand Review Modal */}
+      <CustomReviewModal
+        isOpen={isCustomReviewOpen}
+        onClose={() => setIsCustomReviewOpen(false)}
+        userId={userId}
+        onQueueUpdated={handleQueueUpdated}
+      />
     </div>
   );
 }

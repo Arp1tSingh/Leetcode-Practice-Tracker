@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import ReviewForm from "./ReviewForm";
 import Link from "next/link";
-import { ExternalLink, X, BrainCircuit } from "lucide-react";
+import { ExternalLink, X, BrainCircuit, Sparkles } from "lucide-react";
 
 import { Metadata } from "next";
 
@@ -52,6 +52,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
   }
 
   const difficultyClass = problem.difficulty === 'Easy' ? 'badge-easy' : problem.difficulty === 'Medium' ? 'badge-medium' : problem.difficulty === 'Hard' ? 'badge-hard' : 'bg-secondary text-secondary-foreground';
+  const isEarlyReview = Boolean(problem.due && problem.due > new Date());
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 pb-20">
@@ -82,6 +83,12 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
               {problem.pattern && (
                 <span className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm font-medium">
                   {problem.pattern}
+                </span>
+              )}
+              {isEarlyReview && (
+                <span className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-sm font-semibold flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  On-Demand Repetition
                 </span>
               )}
             </div>
